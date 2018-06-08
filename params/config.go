@@ -46,7 +46,7 @@ var DataBasePath string
 func init() {
 	SmtWithdraw = big.NewInt(1)
 	SmtUpdatTransfer = big.NewInt(3)
-	SmtAddress = common.HexToAddress("0x8C8d8E49A91Ef5aeb9bA784c385b94963b2E3DE3")
+	SmtAddress = common.HexToAddress("0x292650fee408320D888e06ed89D938294Ea42f99")
 }
 
 //DefaultDataDir default work directory

@@ -80,6 +80,11 @@ func StartMain() {
 			Name:  "password-file",
 			Usage: "Text file containing password for provided account",
 		},
+		cli.StringFlag{
+			Name:  "smt",
+			Usage: "smt address",
+			Value: params.SmtAddress.String(),
+		},
 	}
 	app.Flags = append(app.Flags, debug.Flags...)
 	app.Action = mainCtx
@@ -224,4 +229,5 @@ func config(ctx *cli.Context) {
 	}
 	databasePath := filepath.Join(userDbPath, "log.db")
 	params.DataBasePath = databasePath
+	params.SmtAddress = common.HexToAddress(ctx.String("smt"))
 }
