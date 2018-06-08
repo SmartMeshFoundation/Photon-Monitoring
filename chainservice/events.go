@@ -126,6 +126,13 @@ func (ce *ChainEvents) handleStateChange(st transfer.StateChange) {
 			}
 		} else {
 			for _, d := range ds {
+				if common.HexToAddress(d.Address) == st2.ClosingAddress {
+					//if the delegator closed this channel, dont need update
+					d.Status = models.DelegateStatusSuccessFinishedByOther
+					d.Error = "delegator closed channel"
+					ce.db.DelegateSave(d)
+					continue
+				}
 				ch, err := ce.bcs.NettingChannel(st2.ChannelAddress)
 				if err != nil {
 					log.Error(fmt.Sprintf("recevied close event ,but channel %s not exist", st2.ChannelAddress.String()))
