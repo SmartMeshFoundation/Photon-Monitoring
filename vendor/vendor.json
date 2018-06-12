@@ -45,6 +45,12 @@
 			"revisionTime": "2018-06-08T03:36:41Z"
 		},
 		{
+			"checksumSHA1": "7N1knFJuoDMHfrpZmpZR3SgaGTs=",
+			"path": "github.com/SmartMeshFoundation/SmartRaiden/log/term",
+			"revision": "b9dca7213948383f9dc5452c793582d0f306bdcb",
+			"revisionTime": "2018-06-12T10:37:06Z"
+		},
+		{
 			"checksumSHA1": "ldPfBZh9cx7hyl2Lg5hybDihOVc=",
 			"path": "github.com/SmartMeshFoundation/SmartRaiden/models",
 			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
