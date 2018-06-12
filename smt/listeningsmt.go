@@ -14,8 +14,8 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
-//SmtQuery monitor receiving smt
-type SmtQuery struct {
+//Query monitor receiving smt
+type Query struct {
 	url      string
 	db       *models.ModelDB
 	quitChan chan struct{}
@@ -25,8 +25,8 @@ type SmtQuery struct {
 }
 
 //NewSmtQuery create qmt query
-func NewSmtQuery(url string, db *models.ModelDB, fromBlockNumber int64) *SmtQuery {
-	return &SmtQuery{
+func NewSmtQuery(url string, db *models.ModelDB, fromBlockNumber int64) *Query {
+	return &Query{
 		url:      url,
 		db:       db,
 		from:     fromBlockNumber,
@@ -36,10 +36,10 @@ func NewSmtQuery(url string, db *models.ModelDB, fromBlockNumber int64) *SmtQuer
 }
 
 //Start query
-func (s *SmtQuery) Start() {
+func (s *Query) Start() {
 	go s.loop()
 }
-func (s *SmtQuery) loop() {
+func (s *Query) loop() {
 	for {
 		select {
 		case <-time.After(time.Second * 10):
@@ -49,7 +49,7 @@ func (s *SmtQuery) loop() {
 		}
 	}
 }
-func (s *SmtQuery) getNewTransfer() {
+func (s *Query) getNewTransfer() {
 	res, err := http.Get(fmt.Sprintf("%s?from_block=%d", s.url, s.from))
 	if err != nil {
 		log.Error(fmt.Sprintf("getNewTransfer err %s", err))
@@ -84,7 +84,7 @@ func (s *SmtQuery) getNewTransfer() {
 }
 
 //Stop query
-func (s *SmtQuery) Stop() {
+func (s *Query) Stop() {
 	s.stopped = true
 	close(s.quitChan)
 }
