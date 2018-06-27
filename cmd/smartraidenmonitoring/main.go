@@ -136,6 +136,7 @@ func mainCtx(ctx *cli.Context) error {
 		signal.Stop(quitSignal)
 		sq.Stop()
 		ce.Stop()
+		db.CloseDB()
 		utils.SystemExit(0)
 	}()
 	restful.Start(db, ce)
