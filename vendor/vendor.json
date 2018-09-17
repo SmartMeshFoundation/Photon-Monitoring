@@ -3,154 +3,124 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "1tRvQmaT4AEa2SBjPOmKYciWTb8=",
-			"path": "github.com/SmartMeshFoundation/SmartRaiden",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"checksumSHA1": "9pUYEkfhzQcqZMhLOgPKSUulWMI=",
+			"path": "github.com/SmartMeshFoundation/SmartRaiden/accounts",
+			"revision": "ba889016c3397ac8191305efd98348be916c42a5",
+			"revisionTime": "2018-09-13T07:38:26Z"
 		},
 		{
-			"checksumSHA1": "ct39Qgse6adm+p2okgB+OgWM4E4=",
+			"checksumSHA1": "E4Y8QgLIj9qi2LL3IzLdz5tu/BY=",
 			"path": "github.com/SmartMeshFoundation/SmartRaiden/blockchain",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
-			"checksumSHA1": "RTFrFtuGKESXsnRDr+qsg1nhs14=",
+			"checksumSHA1": "Ld/dgnZIEeC9uLWlYmUyWnqFtnk=",
 			"path": "github.com/SmartMeshFoundation/SmartRaiden/channel",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
-			"checksumSHA1": "OxoNx5ySOgL83Fzhx/M4jgRmLHc=",
-			"path": "github.com/SmartMeshFoundation/SmartRaiden/cmd/tools/newtestenv/createchannel",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"checksumSHA1": "LQ975EIdVqVRaLB38KI447TeDG4=",
+			"path": "github.com/SmartMeshFoundation/SmartRaiden/channel/channeltype",
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
-			"checksumSHA1": "xMK2f0WcVhRaFB5vxwaTC0sahyo=",
+			"checksumSHA1": "fj8w57Vnwip6eVmDidnCI8AiZzg=",
 			"path": "github.com/SmartMeshFoundation/SmartRaiden/encoding",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "lCIvs01eYC/3Si8EWp7OhlhKhrs=",
 			"path": "github.com/SmartMeshFoundation/SmartRaiden/internal/rpanic",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
-			"checksumSHA1": "NYjzsU9w1xE0agig+qleKGpLbWw=",
+			"checksumSHA1": "XqfkkUEXh+6PhSRIrkNklh1oR5k=",
 			"path": "github.com/SmartMeshFoundation/SmartRaiden/log",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "7N1knFJuoDMHfrpZmpZR3SgaGTs=",
 			"path": "github.com/SmartMeshFoundation/SmartRaiden/log/term",
-			"revision": "b9dca7213948383f9dc5452c793582d0f306bdcb",
-			"revisionTime": "2018-06-12T10:37:06Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
-			"checksumSHA1": "ldPfBZh9cx7hyl2Lg5hybDihOVc=",
-			"path": "github.com/SmartMeshFoundation/SmartRaiden/models",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
-		},
-		{
-			"checksumSHA1": "WBgrvMmHhSWrFSSpMy8VAYp4oKA=",
-			"path": "github.com/SmartMeshFoundation/SmartRaiden/network",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
-		},
-		{
-			"checksumSHA1": "971Zs/ktb4v/PPngiidsxvcte4A=",
-			"path": "github.com/SmartMeshFoundation/SmartRaiden/network/dijkstra",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
-		},
-		{
-			"checksumSHA1": "CYe6AxEOYOl7LO1cLRhYGWobLhQ=",
+			"checksumSHA1": "/g6oZ/r5jf/L0fZWOPN3toe1dnY=",
 			"path": "github.com/SmartMeshFoundation/SmartRaiden/network/helper",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
-			"checksumSHA1": "1F8eXznlBAPLyvvD+CG241sf2+4=",
+			"checksumSHA1": "Vk0YeuB0m7SvbY0zQe3Lhf70+rI=",
+			"path": "github.com/SmartMeshFoundation/SmartRaiden/network/netshare",
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
+		},
+		{
+			"checksumSHA1": "xJPJHnVr4Mx8m7GyVIUXO+GXsTA=",
 			"path": "github.com/SmartMeshFoundation/SmartRaiden/network/rpc",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
-			"checksumSHA1": "/KuAPJp4TFYVxYzKjb32Dqpt5KI=",
+			"checksumSHA1": "k+PeqH8ve4vODLP8rtMXNRcQlps=",
 			"path": "github.com/SmartMeshFoundation/SmartRaiden/network/rpc/contracts",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "JH0I/tLBgltt195Ck5mfZmvGBZA=",
 			"path": "github.com/SmartMeshFoundation/SmartRaiden/network/rpc/fee",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
-			"checksumSHA1": "u/WcQKgLydDAT1ib75sDP1txNyE=",
-			"path": "github.com/SmartMeshFoundation/SmartRaiden/network/xmpptransport",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
-		},
-		{
-			"checksumSHA1": "hXYDzJx+gAHj77l/8gzPPSSLUcg=",
-			"path": "github.com/SmartMeshFoundation/SmartRaiden/network/xmpptransport/xmpppass",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
-		},
-		{
-			"checksumSHA1": "bjEKs9zJHoI5UrKO093ZeOumCnY=",
+			"checksumSHA1": "wJzEEIqn6SoG0Id9XAjaMwK3c0w=",
 			"path": "github.com/SmartMeshFoundation/SmartRaiden/params",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "ba889016c3397ac8191305efd98348be916c42a5",
+			"revisionTime": "2018-09-13T07:38:26Z"
 		},
 		{
 			"checksumSHA1": "8HdXA5n7SzWBmAAJiJEerNommJw=",
 			"path": "github.com/SmartMeshFoundation/SmartRaiden/rerr",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
-			"checksumSHA1": "l6/XdbHGm7MTPwN2wLHFQ4umMv4=",
+			"checksumSHA1": "Q3knL5lHUvJeRDFCpw+7E06siUw=",
 			"path": "github.com/SmartMeshFoundation/SmartRaiden/transfer",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
-			"checksumSHA1": "WKZJZNgI4BlGLOqTHSPLoRGJZC8=",
+			"checksumSHA1": "Uw7evkoB04GQu+gzyanZCrCUV0M=",
 			"path": "github.com/SmartMeshFoundation/SmartRaiden/transfer/mediatedtransfer",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
-			"checksumSHA1": "RQ0UzSs7OJem+/Kc3XUTu6ItS68=",
-			"path": "github.com/SmartMeshFoundation/SmartRaiden/transfer/mediatedtransfer/initiator",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"checksumSHA1": "qhM+HYWTHxKEfworQuE/TtrTO5k=",
+			"path": "github.com/SmartMeshFoundation/SmartRaiden/transfer/mtree",
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
-			"checksumSHA1": "slw5HlRPDhEO2zyS3VY7umj0Vlk=",
-			"path": "github.com/SmartMeshFoundation/SmartRaiden/transfer/mediatedtransfer/mediator",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"checksumSHA1": "HQweaLhmUj3zHU5lfHMjL4tmkoA=",
+			"path": "github.com/SmartMeshFoundation/SmartRaiden/transfer/route",
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
-			"checksumSHA1": "yY98Z6DxMUbn4/Uj6QPDCA2l62w=",
-			"path": "github.com/SmartMeshFoundation/SmartRaiden/transfer/mediatedtransfer/target",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
-		},
-		{
-			"checksumSHA1": "uQ5rr7a9sHeoTVj/fzXyk2DQlO0=",
+			"checksumSHA1": "Bq6KQiDvv1s21cowrtIuowJkOwM=",
 			"path": "github.com/SmartMeshFoundation/SmartRaiden/utils",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "KMTpIQS+cdSCzMN5TC6GfNLTv0o=",
@@ -168,8 +138,8 @@
 			"checksumSHA1": "pWw3xLiP73NGFM6Tgbz+xznjHKE=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/aristanetworks/goarista/monotime",
 			"path": "github.com/aristanetworks/goarista/monotime",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "hfo9ztt90zcHCuPZNnU2HRmVCNE=",
@@ -217,377 +187,370 @@
 			"checksumSHA1": "UfuNIPxJntrr9T3zw7IS05dk6DM=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/astaxie/beego/logs",
 			"path": "github.com/astaxie/beego/logs",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "eVH6ttDfEiYTzPMf4UO0W6mrpTk=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/btcsuite/btcd/btcec",
 			"path": "github.com/btcsuite/btcd/btcec",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
-			"checksumSHA1": "4/T2GGY2u+Xn2xT7yIXlM7oBxj8=",
+			"checksumSHA1": "gZSkXrkqUr2YeNM8kr21D6rTx4s=",
 			"path": "github.com/coreos/bbolt",
 			"revision": "ee30b748bcfbd74ec1d8439ae8fd4f9123a5c94e",
 			"revisionTime": "2018-01-18T18:15:22Z"
 		},
 		{
 			"checksumSHA1": "GcIrB1ug6mS8aG73v1KtlHfva9Q=",
+			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/davecgh/go-spew/spew",
 			"path": "github.com/davecgh/go-spew/spew",
-			"revision": "adab96458c51a58dc1783b3335dcce5461522e75",
-			"revisionTime": "2017-07-11T18:34:51Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
-			"checksumSHA1": "O3ryMVZ4y6HVqsSAN1FBWqKj1JM=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum",
+			"checksumSHA1": "1xK7ycc1ICRInk/S9iiyB9Rpv50=",
+			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/deckarep/golang-set",
+			"path": "github.com/deckarep/golang-set",
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
+		},
+		{
+			"checksumSHA1": "f8TvBu5gsGGTsN4HK06vdUWCSes=",
 			"path": "github.com/ethereum/go-ethereum",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "UK1RLyZ2UScHMlj4pRIg86XJJ+8=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/accounts",
+			"checksumSHA1": "fEkaglcZ/z7ZSEcmq9VpiVfhTMg=",
 			"path": "github.com/ethereum/go-ethereum/accounts",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "oCQ4rITV/X+h3Av/VpLTYEPOt9A=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/accounts/abi",
+			"checksumSHA1": "xdHF51UsR4MOlM+mZfYgF1aedrw=",
 			"path": "github.com/ethereum/go-ethereum/accounts/abi",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "QQWjq6GSth/yDxSdSqpxxACe0aQ=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/accounts/abi/bind",
+			"checksumSHA1": "rpkwn4AJqJxmVFPUK2BBgkZqzko=",
 			"path": "github.com/ethereum/go-ethereum/accounts/abi/bind",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "uYBdR4Q7Y3SXUy57cnttFE4rLH8=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/accounts/keystore",
+			"checksumSHA1": "GclEuwmrZ41Xrp4/HbaX/oYRQd0=",
 			"path": "github.com/ethereum/go-ethereum/accounts/keystore",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "ZBJ+9jcr5+qpt0fJppEV5INWw4I=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/accounts/usbwallet",
+			"checksumSHA1": "l+j3lTA0RNADknis0xezQbVwids=",
 			"path": "github.com/ethereum/go-ethereum/accounts/usbwallet",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "fhRJ3jQIsvxuSfZ+86B9GU/fUzw=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/accounts/usbwallet/internal/trezor",
+			"checksumSHA1": "v+GZWtQ40QSBdg40ehzytntaS9s=",
 			"path": "github.com/ethereum/go-ethereum/accounts/usbwallet/internal/trezor",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "HsnK/kDWkgLG+5/M7pxROcccZwg=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/common",
+			"checksumSHA1": "/7Z4Okg8hv2yqFVbPi/dfg9H99k=",
 			"path": "github.com/ethereum/go-ethereum/common",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "O5Jjl4oFf/4KuEc24vQnoi9Kd4M=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/common/hexutil",
+			"checksumSHA1": "2EkKilu0Q1uuX7XoHks8qnW/LXo=",
 			"path": "github.com/ethereum/go-ethereum/common/hexutil",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "Zda1/QlYkX6WzOntMLWdPF0pfg4=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/common/math",
+			"checksumSHA1": "BP3m/oEeoC9ustdCYzAVS/gabqg=",
 			"path": "github.com/ethereum/go-ethereum/common/math",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "+ARQwKs8CAzXIU9ZSjh+Fls49c4=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/common/mclock",
+			"checksumSHA1": "TUAAxnHql8XSYnC157Y5iqyL6FQ=",
 			"path": "github.com/ethereum/go-ethereum/common/mclock",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "tV31hdGtd10PNx7TM/KuLWACoTA=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/core/types",
+			"checksumSHA1": "voPtQn+f060DPMWZVD7anWUBkEE=",
 			"path": "github.com/ethereum/go-ethereum/core/types",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "8ai6AHVnzptpYk4jz5YSus2vTaQ=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/crypto",
+			"checksumSHA1": "AkqhNZ5tkVy0WiJpzNDxeZUtvMw=",
 			"path": "github.com/ethereum/go-ethereum/crypto",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "cUmUZAOMV7dx9icikwyKRISEhIk=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/crypto/ecies",
+			"checksumSHA1": "h/0RCAuS2HAjwCylHYh6yQgrFu8=",
 			"path": "github.com/ethereum/go-ethereum/crypto/ecies",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "2IDUXFD4PB+RpZ2UXLvGwU7qihk=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/crypto/randentropy",
-			"path": "github.com/ethereum/go-ethereum/crypto/randentropy",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"checksumSHA1": "Yj/f2Ip4JlOYGYKAmHdliI/b+5o=",
+			"path": "github.com/ethereum/go-ethereum/crypto/secp256k1",
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z",
+			"tree": true
 		},
 		{
-			"checksumSHA1": "9BXdjbACsHoHZZfY3b8bMc76R7w=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/crypto/sha3",
+			"checksumSHA1": "pQzUVRi0z/3Z4FpRyExSg1ROLSA=",
 			"path": "github.com/ethereum/go-ethereum/crypto/sha3",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "8rCQxyaTyH/y2evwpwHWEFJDbeY=",
+			"checksumSHA1": "JcrTEhT92VgJ6bC4aPk8jbXahCw=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/ethclient",
 			"path": "github.com/ethereum/go-ethereum/ethclient",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
-			"checksumSHA1": "DOEjudcn+RTt4VoIHXQZK4Pm1d0=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/ethdb",
+			"checksumSHA1": "74WgxcRd/1NSMAWzjcEK1l3MC2Y=",
 			"path": "github.com/ethereum/go-ethereum/ethdb",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "cY0INJpk2M+geP4Y0muXIqsH71Q=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/event",
+			"checksumSHA1": "egyKJ+8B2RjmvMz0xqkVGY0B6Ig=",
 			"path": "github.com/ethereum/go-ethereum/event",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "HBMo9Ot412BGJ/cxeVpEQwzNNGs=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/internal/debug",
+			"checksumSHA1": "FuH/dWAwx7a6+0Y1B+mUOcZXsR4=",
 			"path": "github.com/ethereum/go-ethereum/internal/debug",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "whX/TyYXXPBs3VyqbjhpIRLWRVM=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/log",
+			"checksumSHA1": "KSRJC/V4LkGTakqzakXY/Ces0sw=",
 			"path": "github.com/ethereum/go-ethereum/log",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "FSe2Mi6YL2AioVoBJCX1ws0j9Jc=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/log/term",
+			"checksumSHA1": "Sm6JjHTDnKAOy2DIvz7U1HJ8jiI=",
 			"path": "github.com/ethereum/go-ethereum/log/term",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "lGZIeDvTm/EfhxzjEYixFrPpI0s=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/metrics",
+			"checksumSHA1": "ku9mr+PBOqnQfrLZ59UwHfZv4Ok=",
 			"path": "github.com/ethereum/go-ethereum/metrics",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "Lza0EsAZ3S1r2PjpAKgvzT2lJkE=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/metrics/exp",
+			"checksumSHA1": "Ls+sIpdo8dlAbrMnZbrq79OB34s=",
 			"path": "github.com/ethereum/go-ethereum/metrics/exp",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "6UEnf0HJaZU41nDC2BY3ki+jQOI=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/node",
+			"checksumSHA1": "URHNKfPUkyeSlEFwozmtaxi5/Ko=",
 			"path": "github.com/ethereum/go-ethereum/node",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "oKMx3kO6TvJQJwq2ogATdmNIml8=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/p2p",
+			"checksumSHA1": "zGkwn6Z81gaT77Q2IuOzeNLq6mQ=",
 			"path": "github.com/ethereum/go-ethereum/p2p",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "uz4SywjXJLZOb94En1/L+dasoqo=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/p2p/discover",
+			"checksumSHA1": "vLz1w9KTY9O03Z3oXKUrBIzjrM4=",
 			"path": "github.com/ethereum/go-ethereum/p2p/discover",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "fdC23bXgzBJB+/HylQ89MgOfdK4=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/p2p/discv5",
+			"checksumSHA1": "hIz+PsT55imD/OitLy+JKrJXewU=",
 			"path": "github.com/ethereum/go-ethereum/p2p/discv5",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "qrZsDNCr0rvip2U5xuZ5mbnuPHI=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/p2p/nat",
+			"checksumSHA1": "oE84f6kRKbSs6nfRXhhD33VYv7I=",
 			"path": "github.com/ethereum/go-ethereum/p2p/nat",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "Y5shGT8fxBShl4uRjckNeY0YoJs=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/p2p/netutil",
+			"checksumSHA1": "lrZb72Om4/eSoa4uiwfFhUdECMI=",
 			"path": "github.com/ethereum/go-ethereum/p2p/netutil",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "IEf26xfu+LwDOlnPYbkUTa7/ryY=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/params",
+			"checksumSHA1": "5ukdAegw+n2xn8Ig7EQKZBxEvuo=",
 			"path": "github.com/ethereum/go-ethereum/params",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "k0AFFj8B5/xCAw1+mF85+p8pJ1U=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/rlp",
+			"checksumSHA1": "z90HAmaR1d3Q71bT3FfCb38aPbw=",
 			"path": "github.com/ethereum/go-ethereum/rlp",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "RsoJH+olvEjcx8ce1DFVhwg41n4=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/rpc",
+			"checksumSHA1": "t+oBefd4L4knEkL7LOst7xeJJdY=",
 			"path": "github.com/ethereum/go-ethereum/rpc",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
-			"checksumSHA1": "Fh+cW+qE33eSid6OfWOUZ5g05Q4=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/ethereum/go-ethereum/trie",
+			"checksumSHA1": "Ie0IxKYWL7L67GsQwtc1yOyEj+M=",
 			"path": "github.com/ethereum/go-ethereum/trie",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
 			"checksumSHA1": "3AVtzZKROGU6hurRfcOBMROUp2w=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/fatedier/frp/src/utils/log",
 			"path": "github.com/fatedier/frp/src/utils/log",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
+		},
+		{
+			"checksumSHA1": "Jq1rrHSGPfh689nA2hL1QVb62zE=",
+			"origin": "github.com/ethereum/go-ethereum/vendor/github.com/fjl/memsize",
+			"path": "github.com/fjl/memsize",
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
+		},
+		{
+			"checksumSHA1": "Z13QAYTqeW4cTiglkc2F05gWLu4=",
+			"origin": "github.com/ethereum/go-ethereum/vendor/github.com/fjl/memsize/memsizeui",
+			"path": "github.com/fjl/memsize/memsizeui",
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
 			"checksumSHA1": "DcM6Fo68U/+wP6usa3qN+7iwpXA=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/go-errors/errors",
 			"path": "github.com/go-errors/errors",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
-			"checksumSHA1": "4i12mddRzVhGXRyTJ1x9KAX4RGM=",
+			"checksumSHA1": "u50p7C1VNNzFlOhzGP8VIne1jn4=",
+			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/go-stack/stack",
 			"path": "github.com/go-stack/stack",
-			"revision": "259ab82a6cad3992b4e21ff5cac294ccb06474bc",
-			"revisionTime": "2017-11-12T03:14:02Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "du6NkYFlK2UnPki8fQIs7NXrkIE=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/golang/protobuf/proto",
 			"path": "github.com/golang/protobuf/proto",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "ShrW78DS7cme1kgz+uhS3454wHU=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/golang/protobuf/protoc-gen-go/descriptor",
 			"path": "github.com/golang/protobuf/protoc-gen-go/descriptor",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "OV+/R43DDDJ/Gxrx9oQob/K7sL0=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/golang/snappy",
 			"path": "github.com/golang/snappy",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "6IA7ns1SUD3DWOwt+J+iNJNnQws=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/huin/goupnp",
 			"path": "github.com/huin/goupnp",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "ICtOOaniEClvKxrUTfCrKLOapxE=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/huin/goupnp/dcps/internetgateway1",
 			"path": "github.com/huin/goupnp/dcps/internetgateway1",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "TPjSYyw3nwc5CHufVnFCmsycd9I=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/huin/goupnp/dcps/internetgateway2",
 			"path": "github.com/huin/goupnp/dcps/internetgateway2",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "ROx01r6L8ejU7m/TnM51xPSMGMU=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/huin/goupnp/httpu",
 			"path": "github.com/huin/goupnp/httpu",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "SI2em6g0rrGFJjCgUxca95rLmpg=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/huin/goupnp/scpd",
 			"path": "github.com/huin/goupnp/scpd",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "1EfLVMvfM5dqqC56sStpYUFB+6U=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/huin/goupnp/soap",
 			"path": "github.com/huin/goupnp/soap",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "acK2w+b4AqzT/SmhKF/vyz3JJtU=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/huin/goupnp/ssdp",
 			"path": "github.com/huin/goupnp/ssdp",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "69Q0u2zDGUAob+oeQBiIc7OgAA4=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/jackpal/go-nat-pmp",
 			"path": "github.com/jackpal/go-nat-pmp",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
-			"checksumSHA1": "tfUlv23rUGmU3pWi76tcaSfOHdg=",
-			"path": "github.com/kataras/iris/utils",
-			"revision": "39f58fe286fe3f3344e3d62acdb333f8e9388b3a",
-			"revisionTime": "2016-10-05T15:42:52Z"
+			"checksumSHA1": "Dof/BfYShnmJYAEtRNtGnIUvgwc=",
+			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/karalabe/hid",
+			"path": "github.com/karalabe/hid",
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z",
+			"tree": true
 		},
 		{
-			"checksumSHA1": "Yz8nRvgJR9qN9OORCUQKc4eHC7Q=",
+			"checksumSHA1": "R6DzcBLEP0BONPpsyr+11N7xh5w=",
 			"path": "github.com/labstack/gommon/color",
 			"revision": "57409ada9da0f2afad6664c49502f8c50fbd8476",
 			"revisionTime": "2017-09-25T05:28:17Z"
 		},
 		{
-			"checksumSHA1": "TSGKEmOygv2KxrVtyOsesmGsPxc=",
+			"checksumSHA1": "uHA6zbtxzJce4r+6uk8zu11qkuk=",
 			"path": "github.com/labstack/gommon/log",
 			"revision": "57409ada9da0f2afad6664c49502f8c50fbd8476",
 			"revisionTime": "2017-09-25T05:28:17Z"
@@ -605,27 +568,21 @@
 			"revisionTime": "2015-12-11T00:06:21Z"
 		},
 		{
-			"checksumSHA1": "RtKvdtsGAL5H08b5U9JwmnqUc7A=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/mattn/go-xmpp",
-			"path": "github.com/mattn/go-xmpp",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
-		},
-		{
-			"checksumSHA1": "QKxIA4TrBD5Uk1fVtutfF1suWxU=",
+			"checksumSHA1": "MDUKhAgA5XHrSXQCloiPj8Zcmfo=",
+			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/nkbai/log",
 			"path": "github.com/nkbai/log",
-			"revision": "86998e435e8c493f244a3fc3a93407978e39dcfb",
-			"revisionTime": "2018-05-19T14:16:59Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "eVoyhpCbyPg6D3P63EStHNO6iIQ=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/pborman/uuid",
 			"path": "github.com/pborman/uuid",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
-			"checksumSHA1": "+oyIJwPyeof36XCkY8awrNfxaNM=",
+			"checksumSHA1": "zKKp5SZ3d3ycKe4EKMNT0BqAWBw=",
 			"origin": "github.com/stretchr/testify/vendor/github.com/pmezard/go-difflib/difflib",
 			"path": "github.com/pmezard/go-difflib/difflib",
 			"revision": "976c720a22c8eb4eb6a0b4348ad85ad12491a506",
@@ -635,32 +592,39 @@
 			"checksumSHA1": "rJlBDt3X/GNXqPfjY8pM80sfzJc=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/prometheus/prometheus/util/flock",
 			"path": "github.com/prometheus/prometheus/util/flock",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
-			"checksumSHA1": "UORaskFJ7p3ByZAupnf5R5LL3+A=",
-			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/rjeczalik/notify",
+			"checksumSHA1": "D8AVDI39CJ+jvw0HOotYU2gz54c=",
+			"origin": "github.com/ethereum/go-ethereum/vendor/github.com/rjeczalik/notify",
 			"path": "github.com/rjeczalik/notify",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "b2c644ffb5c283a171ddf3889693673939917541",
+			"revisionTime": "2018-08-21T19:56:54Z"
 		},
 		{
 			"checksumSHA1": "OpqXzG/TsirRRiSxa+hCSOfaQ0k=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/rs/cors",
 			"path": "github.com/rs/cors",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "c4NinZs0gcDUkXx375li6epE8K0=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/rs/xhandler",
 			"path": "github.com/rs/xhandler",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
-			"checksumSHA1": "6RKpV2fKzhXl7aay5lelpiPljCY=",
+			"checksumSHA1": "eDQ6f1EsNf+frcRO/9XukSEchm8=",
+			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/satori/go.uuid",
+			"path": "github.com/satori/go.uuid",
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
+		},
+		{
+			"checksumSHA1": "Q2V7Zs3diLmLfmfbiuLpSxETSuY=",
 			"path": "github.com/stretchr/testify/assert",
 			"revision": "976c720a22c8eb4eb6a0b4348ad85ad12491a506",
 			"revisionTime": "2016-09-25T22:06:09Z"
@@ -669,101 +633,95 @@
 			"checksumSHA1": "/CaCQCgE6P4QBc+n51peQBOuRP8=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/syndtr/goleveldb/leveldb",
 			"path": "github.com/syndtr/goleveldb/leveldb",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "N9nV8IFnjnSv7vDyFmI2KY1+3UQ=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/syndtr/goleveldb/leveldb/cache",
 			"path": "github.com/syndtr/goleveldb/leveldb/cache",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "fX6hNc8MjmY0uRXLeDDR1yP1RW4=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/syndtr/goleveldb/leveldb/comparer",
 			"path": "github.com/syndtr/goleveldb/leveldb/comparer",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "KPLIq+6AiJ0T3M8ujkuPkUHExZg=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/syndtr/goleveldb/leveldb/errors",
 			"path": "github.com/syndtr/goleveldb/leveldb/errors",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "nzy2qKBrYeptC6EU0+fOOYVRCWk=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/syndtr/goleveldb/leveldb/filter",
 			"path": "github.com/syndtr/goleveldb/leveldb/filter",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "7t3sI0tdTpv9BsSg6DftVcs5cag=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/syndtr/goleveldb/leveldb/iterator",
 			"path": "github.com/syndtr/goleveldb/leveldb/iterator",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "HiQVGWLBnlhm0isR9T7mAeAjoTo=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/syndtr/goleveldb/leveldb/journal",
 			"path": "github.com/syndtr/goleveldb/leveldb/journal",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "tN2WSF9CZjCbscI4d0mG0yOLPQ8=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/syndtr/goleveldb/leveldb/memdb",
 			"path": "github.com/syndtr/goleveldb/leveldb/memdb",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "6Umu4vGG/SklM+2SKN3Gbr9mafs=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/syndtr/goleveldb/leveldb/opt",
 			"path": "github.com/syndtr/goleveldb/leveldb/opt",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "Ojx7KzGNCvLonQ6ANXCdBhSOPMM=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/syndtr/goleveldb/leveldb/storage",
 			"path": "github.com/syndtr/goleveldb/leveldb/storage",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "xryWOq73uFiB8+DmSXCmu7+WVAI=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/syndtr/goleveldb/leveldb/table",
 			"path": "github.com/syndtr/goleveldb/leveldb/table",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "2SrjE6OkM/oNTOFgZKyMglIx+PQ=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/github.com/syndtr/goleveldb/leveldb/util",
 			"path": "github.com/syndtr/goleveldb/leveldb/util",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
-			"checksumSHA1": "KTLSWLFoVhoAhQbxnaAarD0AG1U=",
-			"path": "github.com/theckman/go-flock",
-			"revision": "d0cbbf0727cd7369d6deda1da29490dc132d45b4",
-			"revisionTime": "2017-10-30T20:34:48Z"
-		},
-		{
-			"checksumSHA1": "x6+Vi9WumwYUrK8ZUmkGLDgOLtc=",
+			"checksumSHA1": "LTOa3BADhwvT0wFCknPueQALm8I=",
 			"origin": "github.com/valyala/fasttemplate/vendor/github.com/valyala/bytebufferpool",
 			"path": "github.com/valyala/bytebufferpool",
 			"revision": "dcecefd839c4193db0d35b88ec65b4c12d360ab0",
 			"revisionTime": "2017-02-24T21:24:29Z"
 		},
 		{
-			"checksumSHA1": "UHztphFBVZKyLNbrMDVPM0VdJ60=",
+			"checksumSHA1": "gtG8jeB0fcTmKZf+6Vbcoa6nfec=",
 			"path": "github.com/valyala/fasttemplate",
 			"revision": "dcecefd839c4193db0d35b88ec65b4c12d360ab0",
 			"revisionTime": "2017-02-24T21:24:29Z"
@@ -772,206 +730,206 @@
 			"checksumSHA1": "1MGpGDQqnUoRpv7VEcQrXOBydXE=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/golang.org/x/crypto/pbkdf2",
 			"path": "golang.org/x/crypto/pbkdf2",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "dHh6VeHcbNg11miGjGEl8LbPe7w=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/golang.org/x/crypto/scrypt",
 			"path": "golang.org/x/crypto/scrypt",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "GtamqiJoL7PGHsN454AoffBFMa8=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/golang.org/x/net/context",
 			"path": "golang.org/x/net/context",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "L68uqaYKEOxkq2xwnNV2bRP7yO4=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/golang.org/x/net/html",
 			"path": "golang.org/x/net/html",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "NvlH++AI8+25Z2Vs8WKxLVCNrxo=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/golang.org/x/net/html/atom",
 			"path": "golang.org/x/net/html/atom",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "barUU39reQ7LdgYLA323hQ/UGy4=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/golang.org/x/net/html/charset",
 			"path": "golang.org/x/net/html/charset",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "7EZyXN0EmZLgGxZxK01IJua4c8o=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/golang.org/x/net/websocket",
 			"path": "golang.org/x/net/websocket",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
-			"checksumSHA1": "+UMEPHX8wvMkCxa+ofAmBKlqdYg=",
+			"checksumSHA1": "f3Wxw5WLLQ3ss7Fn2lBZiMzj6NQ=",
 			"path": "golang.org/x/sys/unix",
-			"revision": "f6cff0780e542efa0c8e864dc8fa522808f6a598",
-			"revisionTime": "2018-02-20T20:26:15Z"
+			"revision": "0ffbfd41fbef8ffcf9b62b0b0aa3a5873ed7a4fe",
+			"revisionTime": "2018-08-02T19:25:30Z"
 		},
 		{
 			"checksumSHA1": "Mr4ur60bgQJnQFfJY0dGtwWwMPE=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/golang.org/x/text/encoding",
 			"path": "golang.org/x/text/encoding",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "DSdlK4MKI/a3U8Zaee2XKBe01Fo=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/golang.org/x/text/encoding/charmap",
 			"path": "golang.org/x/text/encoding/charmap",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "tLQQZEU7qS/eYyCvd76Wqfz1oR8=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/golang.org/x/text/encoding/htmlindex",
 			"path": "golang.org/x/text/encoding/htmlindex",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "zeHyHebIZl1tGuwGllIhjfci+wI=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/golang.org/x/text/encoding/internal",
 			"path": "golang.org/x/text/encoding/internal",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "7kYqxy64WhMjFIFZgN7tJ3lbKxM=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/golang.org/x/text/encoding/internal/identifier",
 			"path": "golang.org/x/text/encoding/internal/identifier",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "2YqVpmvjWGEBATyUphTP1MS34JE=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/golang.org/x/text/encoding/japanese",
 			"path": "golang.org/x/text/encoding/japanese",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "+ErWCAdaMwO4PLtrk9D/Hh+7oQM=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/golang.org/x/text/encoding/korean",
 			"path": "golang.org/x/text/encoding/korean",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "mTuZi5urYwgDIO8+Gfql2pv8Vwg=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/golang.org/x/text/encoding/simplifiedchinese",
 			"path": "golang.org/x/text/encoding/simplifiedchinese",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "D+VI4j0Wjzr8SeupWdOB5KBdFOw=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/golang.org/x/text/encoding/traditionalchinese",
 			"path": "golang.org/x/text/encoding/traditionalchinese",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "G9LfJI9gySazd+MyyC6QbTHx4to=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/golang.org/x/text/encoding/unicode",
 			"path": "golang.org/x/text/encoding/unicode",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "TWgJww5WcPoH39HKMNW0gEcQHts=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/golang.org/x/text/internal/language",
 			"path": "golang.org/x/text/internal/language",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "hyNCcTwMQnV6/MK8uUW9E5H0J0M=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/golang.org/x/text/internal/tag",
 			"path": "golang.org/x/text/internal/tag",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "Qk7dljcrEK1BJkAEZguxAbG9dSo=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/golang.org/x/text/internal/utf8internal",
 			"path": "golang.org/x/text/internal/utf8internal",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "B2EFJkBRmiAWXqY/4zqUJfp85ag=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/golang.org/x/text/language",
 			"path": "golang.org/x/text/language",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "IV4MN7KGBSocu/5NR3le3sxup4Y=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/golang.org/x/text/runes",
 			"path": "golang.org/x/text/runes",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "ziMb9+ANGRJSSIuxYdRbA+cDRBQ=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/golang.org/x/text/transform",
 			"path": "golang.org/x/text/transform",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "AsL/fTkY1p1HNVSikhVZJd++Nrk=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/golang.org/x/tools/go/ast/astutil",
 			"path": "golang.org/x/tools/go/ast/astutil",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "YdejFquVXC1tbsHOGIuhIl2CHt0=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/golang.org/x/tools/imports",
 			"path": "golang.org/x/tools/imports",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "GawkAYw670ZS+f0D17MYNps41QA=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/gopkg.in/fatih/set.v0",
 			"path": "gopkg.in/fatih/set.v0",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "1l+DHbXeIPDI2yyqkRJfvSVy3W0=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/gopkg.in/karalabe/cookiejar.v2/collections/prque",
 			"path": "gopkg.in/karalabe/cookiejar.v2/collections/prque",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
 			"checksumSHA1": "2qFBBtdJlljXG9S1E03OiRf/gsM=",
 			"origin": "github.com/SmartMeshFoundation/SmartRaiden/vendor/gopkg.in/natefinch/npipe.v2",
 			"path": "gopkg.in/natefinch/npipe.v2",
-			"revision": "e926f37c466961f27fb9f85eb83af4f406137960",
-			"revisionTime": "2018-06-08T03:36:41Z"
+			"revision": "8ebf5da8f9f13bdf2e8dcd8985b31c08ef84980d",
+			"revisionTime": "2018-09-13T03:45:23Z"
 		},
 		{
-			"checksumSHA1": "uja6BKCN3ngSeXQE7te2vq4bKro=",
+			"checksumSHA1": "Yx1MU40fyGe7hhqW9+dkv8kXa60=",
 			"path": "gopkg.in/urfave/cli.v1",
 			"revision": "cfb38830724cc34fedffe9a2a29fb54fa9169cd1",
 			"revisionTime": "2017-08-11T01:42:03Z"

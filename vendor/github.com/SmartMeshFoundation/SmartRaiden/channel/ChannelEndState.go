@@ -5,49 +5,16 @@ import (
 
 	"fmt"
 
-	"encoding/gob"
-
 	"math/big"
 
+	"github.com/SmartMeshFoundation/SmartRaiden/channel/channeltype"
 	"github.com/SmartMeshFoundation/SmartRaiden/encoding"
 	"github.com/SmartMeshFoundation/SmartRaiden/log"
 	"github.com/SmartMeshFoundation/SmartRaiden/transfer"
+	"github.com/SmartMeshFoundation/SmartRaiden/transfer/mtree"
 	"github.com/SmartMeshFoundation/SmartRaiden/utils"
 	"github.com/ethereum/go-ethereum/common"
 )
-
-/*
-PendingLock is lock of HTLC
-*/
-type PendingLock struct {
-	Lock       *encoding.Lock
-	LockHashed common.Hash
-}
-
-/*
-UnlockPartialProof is the lock that I have known the secret ,but haven't receive the Balance proof
-*/
-type UnlockPartialProof struct {
-	Lock       *encoding.Lock
-	LockHashed common.Hash
-	Secret     common.Hash
-}
-
-/*
-UnlockProof is the info needs withdraw on blockchain
-*/
-type UnlockProof struct {
-	MerkleProof []common.Hash
-	LockEncoded []byte
-	Secret      common.Hash
-}
-
-func init() {
-	gob.Register(&PendingLock{})
-	gob.Register(&UnlockPartialProof{})
-	//make sure don't save this data
-	//gob.Register(&UnlockProof{})
-}
 
 /*
 InvalidLocksRootError is a wrong locks root error
@@ -73,33 +40,65 @@ all the transfer (whenever lock or not ) I have sent.
 */
 type EndState struct {
 	Address             common.Address
-	ContractBalance     *big.Int                    //lock protect race codition with raidenapi
-	Lock2PendingLocks   map[common.Hash]PendingLock //the lock I have sent
-	Lock2UnclaimedLocks map[common.Hash]UnlockPartialProof
-	TreeState           *transfer.MerkleTreeState
+	ContractBalance     *big.Int                                //lock protect race codition with raidenapi
+	Lock2PendingLocks   map[common.Hash]channeltype.PendingLock //the lock I have sent
+	Lock2UnclaimedLocks map[common.Hash]channeltype.UnlockPartialProof
+	Tree                *mtree.Merkletree
 	BalanceProofState   *transfer.BalanceProofState //race codition with raidenapi
 }
 
 //NewChannelEndState create EndState
 func NewChannelEndState(participantAddress common.Address, participantBalance *big.Int,
-	balanceProof *transfer.BalanceProofState, tree *transfer.MerkleTreeState) *EndState {
+	balanceProof *transfer.BalanceProofState, tree *mtree.Merkletree) *EndState {
 	c := &EndState{
 		Address:             participantAddress,
 		ContractBalance:     participantBalance,
-		TreeState:           tree,
+		Tree:                tree,
 		BalanceProofState:   balanceProof,
-		Lock2PendingLocks:   make(map[common.Hash]PendingLock),
-		Lock2UnclaimedLocks: make(map[common.Hash]UnlockPartialProof),
+		Lock2PendingLocks:   make(map[common.Hash]channeltype.PendingLock),
+		Lock2UnclaimedLocks: make(map[common.Hash]channeltype.UnlockPartialProof),
+	}
+	if c.BalanceProofState == nil {
+		c.BalanceProofState = transfer.NewEmptyBalanceProofState()
 	}
 	return c
 }
 
 //TransferAmount is how many tokens I have sent to  partner.
 func (node *EndState) TransferAmount() *big.Int {
-	if node.BalanceProofState != nil {
-		return node.BalanceProofState.TransferAmount
+	return node.BalanceProofState.TransferAmount
+}
+
+func (node *EndState) locksRoot() common.Hash {
+	return node.BalanceProofState.LocksRoot
+}
+
+//SetContractTransferAmount update node's  transfer amount by contract event
+func (node *EndState) SetContractTransferAmount(amount *big.Int) {
+	// amount 为0,只有一种情况就是发生了 punish 事件
+	if amount.Cmp(utils.BigInt0) != 0 && amount.Cmp(node.BalanceProofState.TransferAmount) <= 0 {
+		panic(fmt.Sprintf("ContractTransferAmount must be greater, ContractTransferAmount=%s,TransferAmount=%s",
+			amount,
+			node.BalanceProofState.TransferAmount,
+		))
 	}
-	return big.NewInt(0)
+	node.BalanceProofState.ContractTransferAmount = new(big.Int).Set(amount)
+}
+func (node *EndState) contractLocksRoot() common.Hash {
+	return node.BalanceProofState.ContractLocksRoot
+}
+func (node *EndState) contractTransferAmount() *big.Int {
+	return node.BalanceProofState.ContractTransferAmount
+}
+
+//SetContractLocksroot update node's locksroot by contract event
+func (node *EndState) SetContractLocksroot(locksroot common.Hash) {
+	node.BalanceProofState.ContractLocksRoot = locksroot
+}
+
+//SetContractNonce update node's nonce by contract event
+func (node *EndState) SetContractNonce(nonce uint64) {
+	node.BalanceProofState.Nonce = nonce
 }
 
 //amountLocked is the tokens I have sent but partner doesn't have received the new blanceproof
@@ -115,11 +114,8 @@ func (node *EndState) amountLocked() *big.Int {
 }
 
 //nonce returns next nonce of this node.
-func (node *EndState) nonce() int64 {
-	if node.BalanceProofState != nil {
-		return node.BalanceProofState.Nonce
-	}
-	return 0
+func (node *EndState) nonce() uint64 {
+	return node.BalanceProofState.Nonce
 }
 
 //Balance returns the availabe tokens i have
@@ -135,13 +131,22 @@ func (node *EndState) Distributable(counterpart *EndState) *big.Int {
 }
 
 //IsKnown returns True if the `hashlock` corresponds to a known lock.
-func (node *EndState) IsKnown(hashlock common.Hash) bool {
-	_, ok := node.Lock2PendingLocks[hashlock]
+func (node *EndState) IsKnown(lockSecretHash common.Hash) bool {
+	_, ok := node.Lock2PendingLocks[lockSecretHash]
 	if ok {
 		return ok
 	}
-	_, ok = node.Lock2UnclaimedLocks[hashlock]
+	_, ok = node.Lock2UnclaimedLocks[lockSecretHash]
 	return ok
+}
+
+//GetSecret returns the secret corresponds to the lockSecretHash if found
+func (node *EndState) GetSecret(lockSecretHash common.Hash) (secret common.Hash, found bool) {
+	l, found := node.Lock2UnclaimedLocks[lockSecretHash]
+	if found {
+		secret = l.Secret
+	}
+	return
 }
 
 //IsLocked returns True if the `hashlock` is known and the correspoding secret is not.
@@ -165,12 +170,12 @@ func (node *EndState) UpdateContractBalance(balance *big.Int) error {
 }
 
 //getLockByHashlock returns the hash corresponding Lock,nil if not found
-func (node *EndState) getLockByHashlock(hashlock common.Hash) *encoding.Lock {
-	lock, ok := node.Lock2PendingLocks[hashlock]
+func (node *EndState) getLockByHashlock(lockSecretHash common.Hash) *mtree.Lock {
+	lock, ok := node.Lock2PendingLocks[lockSecretHash]
 	if ok {
 		return lock.Lock
 	}
-	plock, ok := node.Lock2UnclaimedLocks[hashlock]
+	plock, ok := node.Lock2UnclaimedLocks[lockSecretHash]
 	if ok {
 		return plock.Lock
 	}
@@ -178,57 +183,40 @@ func (node *EndState) getLockByHashlock(hashlock common.Hash) *encoding.Lock {
 }
 
 /*
+getSecretByLockSecretHash get secret by secret's hash
+*/
+func (node *EndState) getSecretByLockSecretHash(lockSecretHash common.Hash) (lock *mtree.Lock, secret common.Hash, err error) {
+	plock, ok := node.Lock2UnclaimedLocks[lockSecretHash]
+	if ok {
+		return plock.Lock, plock.Secret, nil
+	}
+	return nil, utils.EmptyHash, errors.New("not found")
+}
+
+/*
 computeMerkleRootWith Compute the resulting merkle root if the lock `include` is added in
        the tree.
 */
-func (node *EndState) computeMerkleRootWith(include *encoding.Lock) (tree *transfer.Merkletree, hash common.Hash) {
-	if !node.IsKnown(include.HashLock) {
-		leaves := make([]common.Hash, len(node.TreeState.Tree.Layers[transfer.LayerLeaves]))
-		copy(leaves, node.TreeState.Tree.Layers[transfer.LayerLeaves])
-		includeHash := utils.Sha3(include.AsBytes())
-		leaves = append(leaves, includeHash)
-		tree, err := transfer.NewMerkleTree(leaves)
-		if err != nil {
-			log.Error(fmt.Sprintf("NewMerkleTree err %s", err))
-		}
+func (node *EndState) computeMerkleRootWith(include *mtree.Lock) (tree *mtree.Merkletree, hash common.Hash) {
+	if !node.IsKnown(include.LockSecretHash) {
+		tree := node.Tree.ComputeMerkleRootWith(include)
 		return tree, tree.MerkleRoot()
 	}
-	return nil, node.TreeState.Tree.MerkleRoot()
-}
-
-func removeHash(leaves []common.Hash, hash common.Hash) []common.Hash {
-	i := -1
-	for j := 0; j < len(leaves); j++ {
-		if leaves[j] == hash {
-			i = j
-			break
-		}
-	}
-	if i >= 0 {
-		leaves = append(leaves[:i], leaves[i+1:]...)
-	}
-	return leaves
+	return nil, node.Tree.MerkleRoot()
 }
 
 /*
  computeMerkleRootWithout Compute the resulting merkle root if the lock `without` is exclude from the tree
 */
-func (node *EndState) computeMerkleRootWithout(without *encoding.Lock) (*transfer.Merkletree, common.Hash, error) {
-	if !node.IsKnown(without.HashLock) {
+func (node *EndState) computeMerkleRootWithout(without *mtree.Lock) (*mtree.Merkletree, common.Hash, error) {
+	if !node.IsKnown(without.LockSecretHash) {
 		return nil, utils.EmptyHash, errUnknownLock
 	}
-	leaves := make([]common.Hash, len(node.TreeState.Tree.Layers[transfer.LayerLeaves]))
-	copy(leaves, node.TreeState.Tree.Layers[transfer.LayerLeaves])
-	withoutHash := utils.Sha3(without.AsBytes())
-	leaves = removeHash(leaves, withoutHash)
-	if len(leaves) > 0 {
-		tree, err := transfer.NewMerkleTree(leaves)
-		if err != nil {
-			return nil, utils.EmptyHash, err
-		}
-		return tree, tree.MerkleRoot(), nil
+	newtree, err := node.Tree.ComputeMerkleRootWithout(without)
+	if err != nil {
+		return nil, utils.EmptyHash, err
 	}
-	return nil, utils.EmptyHash, nil
+	return newtree, newtree.MerkleRoot(), nil
 }
 
 /*
@@ -248,48 +236,48 @@ func (node *EndState) computeMerkleRootWithout(without *encoding.Lock) (*transfe
        hashlock included, otherwise it won't be able to claim it.
 
        Args:
-           transfer (LockedTransfer): The transfer to be added.
+          lockedTransfer: The transfer to be added.
 
-       Raises:
-           InvalidLocksRoot: If the merkleroot of `locked_transfer` does not
-           match with the expected value.
-
-           ValueError: If the transfer contains a lock that was registered
-           previously.
 //Calculate the banlanceproof locksroot position before sending
 */
 func (node *EndState) registerLockedTransfer(lockedTransfer encoding.EnvelopMessager) error {
-	if !encoding.IsLockedTransfer(lockedTransfer) {
+	if lockedTransfer.Cmd() != encoding.MediatedTransferCmdID {
 		return errors.New("not a locked lockedTransfer")
 	}
 	balanceProof := transfer.NewBalanceProofStateFromEnvelopMessage(lockedTransfer)
 	mtranfer := encoding.GetMtrFromLockedTransfer(lockedTransfer)
 	lock := mtranfer.GetLock()
-	if node.IsKnown(lock.HashLock) {
+	if node.IsKnown(lock.LockSecretHash) {
 		return errors.New("hashlock is already registered")
 	}
 	newtree, locksroot := node.computeMerkleRootWith(lock)
-	lockhashed := utils.Sha3(lock.AsBytes())
 	if balanceProof.LocksRoot != locksroot {
-		return &InvalidLocksRootError{locksroot, balanceProof.LocksRoot}
+		return &InvalidLocksRootError{
+			ExpectedLocksroot: locksroot,
+			GotLocksroot:      balanceProof.LocksRoot,
+		}
 	}
-	node.Lock2PendingLocks[lock.HashLock] = PendingLock{lock, lockhashed}
+	node.Lock2PendingLocks[lock.LockSecretHash] = channeltype.PendingLock{
+		Lock:     lock,
+		LockHash: lock.Hash(),
+	}
 	node.BalanceProofState = balanceProof
-	node.TreeState = transfer.NewMerkleTreeState(newtree)
+	node.Tree = newtree
 	return nil
 }
 
 /*
 registerDirectTransfer register a direct_transfer.
 
-       Raises:
-           InvalidLocksRoot: If the merkleroot of `direct_transfer` does not
-           match the current value.
+安全检查:
+nonce,channel 由前置检查保证
+transferAmount 必须增大,
+locksroot 必须相等.
 */
 func (node *EndState) registerDirectTransfer(directTransfer *encoding.DirectTransfer) error {
 	balanceProof := transfer.NewBalanceProofStateFromEnvelopMessage(directTransfer)
-	if balanceProof.LocksRoot != node.TreeState.Tree.MerkleRoot() {
-		return &InvalidLocksRootError{node.TreeState.Tree.MerkleRoot(), balanceProof.LocksRoot}
+	if balanceProof.LocksRoot != node.Tree.MerkleRoot() {
+		return &InvalidLocksRootError{node.Tree.MerkleRoot(), balanceProof.LocksRoot}
 	}
 	node.BalanceProofState = balanceProof
 	return nil
@@ -300,74 +288,109 @@ RegisterRemoveExpiredHashlockTransfer register a RemoveExpiredHashlockTransfer
 this message may be sent out from this node or received from partner
 */
 func (node *EndState) registerRemoveExpiredHashlockTransfer(removeExpiredHashlockTransfer *encoding.RemoveExpiredHashlockTransfer) error {
-	balanceProof := transfer.NewBalanceProofStateFromEnvelopMessage(removeExpiredHashlockTransfer)
-	if balanceProof.TransferAmount.Cmp(node.TransferAmount()) != 0 {
-		return errTransferAmountMismatch
-	}
+	return node.registerRemoveLock(removeExpiredHashlockTransfer, removeExpiredHashlockTransfer.LockSecretHash)
+}
+
+func (node *EndState) registerAnnounceDisdposedTransferResponse(response *encoding.AnnounceDisposedResponse) error {
+	return node.registerRemoveLock(response, response.LockSecretHash)
+}
+
+func (node *EndState) registerRemoveLock(msg encoding.EnvelopMessager, lockSecretHash common.Hash) error {
+	balanceProof := transfer.NewBalanceProofStateFromEnvelopMessage(msg)
 	node.BalanceProofState = balanceProof
-	delete(node.Lock2PendingLocks, removeExpiredHashlockTransfer.HashLock)
-	delete(node.Lock2UnclaimedLocks, removeExpiredHashlockTransfer.HashLock)
+	delete(node.Lock2PendingLocks, lockSecretHash)
+	delete(node.Lock2UnclaimedLocks, lockSecretHash)
 	return nil
 }
 
 /*
 registerSecretMessage register a secret message
 this message may be sent out from this node or received from partner
+1.有这个锁
+2.locksroot 要恰好等于去掉这个锁
+3.transferAmount 要恰好等于这个锁的金额加上历史 transferAmount
 */
-func (node *EndState) registerSecretMessage(secret *encoding.Secret) error {
-	balanceProof := transfer.NewBalanceProofStateFromEnvelopMessage(secret)
-	hashlock := utils.Sha3(secret.Secret[:])
-	pendingLock, ok := node.Lock2PendingLocks[hashlock]
-	var lock *encoding.Lock
-	if ok {
-		lock = pendingLock.Lock
-	} else {
-		unclaimedLock, ok := node.Lock2UnclaimedLocks[hashlock]
-		if ok {
-			lock = unclaimedLock.Lock
-		}
+func (node *EndState) registerSecretMessage(unlock *encoding.UnLock) (err error) {
+	balanceProof := transfer.NewBalanceProofStateFromEnvelopMessage(unlock)
+	lockSecretHash := utils.ShaSecret(unlock.LockSecret[:])
+	lock := node.getLockByHashlock(lockSecretHash)
+	if lock == nil {
+		err = fmt.Errorf(" receive unlock message,but has no related lockSecretHash,msg=%s", utils.StringInterface(unlock, 3))
+		log.Error(err.Error())
+		return err
 	}
-	//if !this.IsKnown(lock.HashLock) { // has corrupted because of lock is nil
-	//	return errors.New("hashlock is not registered")
-	//}
 	newtree, newLocksroot, err := node.computeMerkleRootWithout(lock)
 	if err != nil {
 		return err
 	}
-	if newtree == nil {
-		newtree, err = transfer.NewMerkleTree(nil)
-		if err != nil {
-			return err
-		}
-	}
 	if balanceProof.LocksRoot != newLocksroot {
 		return &InvalidLocksRootError{newLocksroot, balanceProof.LocksRoot}
 	}
-	delete(node.Lock2PendingLocks, lock.HashLock)
-	delete(node.Lock2UnclaimedLocks, lock.HashLock)
-	node.TreeState = transfer.NewMerkleTreeState(newtree)
+	transferAmount := new(big.Int).Add(node.TransferAmount(), lock.Amount)
+	/*
+		金额只能是当前金额加上本次锁的金额,多了少了都是错的
+	*/
+	if unlock.TransferAmount.Cmp(transferAmount) != 0 {
+		return fmt.Errorf("invalid transferred_amount, expected: %s got: %s",
+			transferAmount, unlock.TransferAmount)
+	}
+	delete(node.Lock2PendingLocks, lock.LockSecretHash)
+	delete(node.Lock2UnclaimedLocks, lock.LockSecretHash)
+	/*
+		确保所有的信息都是正确的,才能更新状态
+	*/
+	node.Tree = newtree
 	node.BalanceProofState = balanceProof
 	return nil
 }
 
 /*
-TryRemoveExpiredHashLock try to remomve a expired hashlock
+registerMediatedMessage register a MediateTransfer message
+this message may be sent out from this node or received from partner
+1.这个锁一定要没有出现过
+2.transferAmount 必须不变
+3.locksroot 要恰好等于旧 locksroot 加上新锁
 */
-func (node *EndState) TryRemoveExpiredHashLock(hashlock common.Hash, blockNumber int64) (lock *encoding.Lock, newtree *transfer.Merkletree, newlocksroot common.Hash, err error) {
-	if !node.IsKnown(hashlock) {
-		err = fmt.Errorf("channel %s donesn't know hashlock %s, cannot remove", utils.APex(node.Address), utils.HPex(hashlock))
-		return
+func (node *EndState) registerMediatedMessage(mtr *encoding.MediatedTransfer) (err error) {
+	balanceProof := transfer.NewBalanceProofStateFromEnvelopMessage(mtr)
+	mtranfer := encoding.GetMtrFromLockedTransfer(mtr)
+	lock := mtranfer.GetLock()
+	if node.IsKnown(lock.LockSecretHash) {
+		return errors.New("hashlock is already registered")
 	}
-	pendingLock, ok := node.Lock2PendingLocks[hashlock]
-	if ok {
-		lock = pendingLock.Lock
-	} else {
-		unclaimedLock, ok := node.Lock2UnclaimedLocks[hashlock]
-		if ok {
-			lock = unclaimedLock.Lock
+	if node.getLockByHashlock(mtr.LockSecretHash) != nil {
+		return fmt.Errorf("MediatedTransfer has duplicated lock, mtr=%s", mtr)
+	}
+	if balanceProof.TransferAmount.Cmp(node.TransferAmount()) < 0 {
+		return fmt.Errorf("transfer amount decrease,now=%s, message=%s", node.TransferAmount(), mtr)
+	}
+	newtree, locksroot := node.computeMerkleRootWith(lock)
+	lockhashed := utils.Sha3(lock.AsBytes())
+	if balanceProof.LocksRoot != locksroot {
+		return &InvalidLocksRootError{
+			ExpectedLocksroot: locksroot,
+			GotLocksroot:      balanceProof.LocksRoot,
 		}
 	}
-	if lock.Expiration > blockNumber {
+	node.Lock2PendingLocks[lock.LockSecretHash] = channeltype.PendingLock{
+		Lock:     lock,
+		LockHash: lockhashed,
+	}
+	node.BalanceProofState = balanceProof
+	node.Tree = newtree
+	return nil
+}
+
+/*
+TryRemoveHashLock try to remomve a expired hashlock
+*/
+func (node *EndState) TryRemoveHashLock(lockSecretHash common.Hash, blockNumber int64, mustExpired bool) (lock *mtree.Lock, newtree *mtree.Merkletree, newlocksroot common.Hash, err error) {
+	lock = node.getLockByHashlock(lockSecretHash)
+	if lock == nil {
+		err = fmt.Errorf("%s donesn't know hashlock %s, cannot remove", utils.APex(node.Address), utils.HPex(lockSecretHash))
+		return
+	}
+	if mustExpired && (lock.Expiration > blockNumber) {
 		err = fmt.Errorf("try to remove a lock which is not expired, expired=%d,currentBlockNumber=%d", lock.Expiration, blockNumber)
 		return
 	}
@@ -375,57 +398,73 @@ func (node *EndState) TryRemoveExpiredHashLock(hashlock common.Hash, blockNumber
 	if err != nil {
 		return
 	}
-	if newtree == nil {
-		newtree, err = transfer.NewMerkleTree(nil)
-		if err != nil {
-			return
-		}
-	}
 	return
 }
 
 /*
 RegisterSecret register a secret(not secret message) so that it can be used in a Balance proof.
 
-        Note:
             This methods needs to be called once a `Secret` message is received
-            or a `SecretRevealed` event happens.
-
-        Raises:
-            ValueError: If the hashlock is not known.
-        """
 */
 func (node *EndState) RegisterSecret(secret common.Hash) error {
-	hashlock := utils.Sha3(secret[:])
+	hashlock := utils.ShaSecret(secret[:])
 	if !node.IsKnown(hashlock) {
 		return errors.New("secret does not correspond to any hashlock")
 	}
 	if node.IsLocked(hashlock) {
 		pendingLock := node.Lock2PendingLocks[hashlock]
 		delete(node.Lock2PendingLocks, hashlock)
-		node.Lock2UnclaimedLocks[hashlock] = UnlockPartialProof{
-			pendingLock.Lock, pendingLock.LockHashed, secret}
+		node.Lock2UnclaimedLocks[hashlock] = channeltype.UnlockPartialProof{
+			Lock:     pendingLock.Lock,
+			LockHash: pendingLock.LockHash,
+			Secret:   secret,
+		}
+	}
+	return nil
+}
+
+/*
+RegisterRevealedSecretHash a SecretReveal event on chain
+*/
+func (node *EndState) RegisterRevealedSecretHash(lockSecretHash, secret common.Hash, blockNumber int64) error {
+	if !node.IsKnown(lockSecretHash) {
+		return errors.New("secret does not correspond to any lockSecretHash")
+	}
+	if node.IsLocked(lockSecretHash) {
+		pendingLock := node.Lock2PendingLocks[lockSecretHash]
+		if blockNumber > pendingLock.Lock.Expiration {
+			return fmt.Errorf("secrethash %s  registerred on block chain,but already expired for me", utils.HPex(lockSecretHash))
+		}
+		delete(node.Lock2PendingLocks, lockSecretHash)
+		node.Lock2UnclaimedLocks[lockSecretHash] = channeltype.UnlockPartialProof{
+			Lock:     pendingLock.Lock,
+			LockHash: pendingLock.LockHash,
+			Secret:   secret,
+		}
 	}
 	return nil
 }
 
 //GetKnownUnlocks generate unlocking proofs for the known secrets
-func (node *EndState) GetKnownUnlocks() []*UnlockProof {
-	tree := node.TreeState.Tree
-	var proofs []*UnlockProof
+func (node *EndState) GetKnownUnlocks() []*channeltype.UnlockProof {
+	tree := node.Tree
+	var proofs []*channeltype.UnlockProof
 	for _, v := range node.Lock2UnclaimedLocks {
-		proof := ComputeProofForLock(v.Secret, v.Lock, tree)
+		proof := ComputeProofForLock(v.Lock, tree)
 		proofs = append(proofs, proof)
 	}
 	return proofs
 }
 
 //ComputeProofForLock returns unlockProof need by contracts
-func ComputeProofForLock(secret common.Hash, lock *encoding.Lock, tree *transfer.Merkletree) *UnlockProof {
+func ComputeProofForLock(lock *mtree.Lock, tree *mtree.Merkletree) *channeltype.UnlockProof {
 	lockEncoded := lock.AsBytes()
 	lockhash := utils.Sha3(lockEncoded)
 	merkleProof := tree.MakeProof(lockhash)
-	return &UnlockProof{merkleProof, lockEncoded, secret}
+	return &channeltype.UnlockProof{
+		MerkleProof: merkleProof,
+		Lock:        lock,
+	}
 }
 
 //where to use?

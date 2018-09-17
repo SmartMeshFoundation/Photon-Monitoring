@@ -15,33 +15,17 @@ type BlockStateChange struct {
 }
 
 /*
-ActionRouteChangeStateChange is A route change.
-
-    State change used for:
-        - when a new route is added.
-        - when the counter party is unresponsive (fails the healthcheck) and the
-          route cannot be used.
-        - when a different transfer uses the channel, changing the available
-          balance.
-*/
-type ActionRouteChangeStateChange struct {
-	Route      *RouteState
-	Identifier uint64
-}
-
-/*
 ActionCancelTransferStateChange The user requests the transfer to be cancelled.
 
     This state change can fail, it depends on the node's role and the current
     state of the transfer.
 */
 type ActionCancelTransferStateChange struct {
-	Identifier uint64
+	LockSecretHash common.Hash
 }
 
 //ActionTransferDirectStateChange send a direct transfer
 type ActionTransferDirectStateChange struct {
-	Identifier   uint64
 	Amount       *big.Int
 	TokenAddress common.Address
 	NodeAddress  common.Address
@@ -49,16 +33,32 @@ type ActionTransferDirectStateChange struct {
 
 //ReceiveTransferDirectStateChange receive a direct transfer
 type ReceiveTransferDirectStateChange struct {
-	Identifier   uint64
 	Amount       *big.Int
 	TokenAddress common.Address
 	Sender       common.Address
 	Message      *encoding.DirectTransfer
 }
 
+//CooperativeSettleStateChange user request to cooperative settle
+type CooperativeSettleStateChange struct {
+	Message *encoding.SettleRequest
+}
+
+//WithdrawRequestStateChange user request to withdraw on chain
+type WithdrawRequestStateChange struct {
+	Message *encoding.WithdrawRequest
+}
+
+/*
+StopTransferRightNowStateChange 收到了 WithdrawRequest 或者 CooperativeSettleRequest, 应该理解停止进行中的交易.
+*/
+type StopTransferRightNowStateChange struct {
+	TokenAddress      common.Address
+	ChannelIdentifier common.Hash
+}
+
 func init() {
 	gob.Register(&BlockStateChange{})
-	gob.Register(&ActionRouteChangeStateChange{})
 	gob.Register(&ActionCancelTransferStateChange{})
 	gob.Register(&ActionTransferDirectStateChange{})
 	gob.Register(&ReceiveTransferDirectStateChange{})

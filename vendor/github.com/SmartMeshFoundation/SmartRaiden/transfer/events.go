@@ -26,15 +26,15 @@ EventTransferSentSuccess emitted by the initiator when a transfer is considered 
     - The lock expires and an EventUnlockFailed follows, contradicting the
       EventTransferSentSuccess.
 
-    Note:
         Mediators cannot use this event, since an unlock may be locally
         sucessful but there is no knowledge about the global transfer.
 */
 type EventTransferSentSuccess struct {
-	Identifier     uint64
-	Amount         *big.Int
-	Target         common.Address
-	ChannelAddress common.Address
+	LockSecretHash    common.Hash
+	Amount            *big.Int
+	Target            common.Address
+	ChannelIdentifier common.Hash
+	Token             common.Address
 }
 
 /*
@@ -45,25 +45,25 @@ EventTransferSentFailed emitted by the payer when a transfer has failed.
         has failed, they may infer about lock successes and failures.
 */
 type EventTransferSentFailed struct {
-	Identifier uint64
-	Reason     string
-	Target     common.Address //transfer's target, may be not the same as receipient
+	LockSecretHash common.Hash
+	Reason         string
+	Target         common.Address //transfer's target, may be not the same as receipient
+	Token          common.Address
 }
 
 /*
 EventTransferReceivedSuccess emitted when a payee has received a payment.
 
-    Note:
         A payee knows if a lock withdraw has failed, but this is not sufficient
         information to deduce when a transfer has failed, because the initiator may
         try again at a different time and/or with different routes, for this reason
         there is no correspoding `EventTransferReceivedFailed`.
 */
 type EventTransferReceivedSuccess struct {
-	Identifier     uint64
-	Amount         *big.Int
-	Initiator      common.Address
-	ChannelAddress common.Address
+	LockSecretHash    common.Hash
+	Amount            *big.Int
+	Initiator         common.Address
+	ChannelIdentifier common.Hash
 }
 
 func init() {
