@@ -16,8 +16,11 @@ import (
 //SmtWithdraw needs to call one withdraw
 var SmtWithdraw *big.Int
 
-//SmtUpdatTransfer needs to call update transfer
-var SmtUpdatTransfer *big.Int
+//SmtUpdateTransfer needs to call update transfer
+var SmtUpdateTransfer *big.Int
+
+//SmtPunish needs to do punish Tx
+var SmtPunish *big.Int
 
 //SmtAddress the token payed for service
 var SmtAddress common.Address
@@ -45,7 +48,8 @@ var DataBasePath string
 
 func init() {
 	SmtWithdraw = big.NewInt(1)
-	SmtUpdatTransfer = big.NewInt(3)
+	SmtPunish = big.NewInt(2)
+	SmtUpdateTransfer = big.NewInt(3)
 	SmtAddress = common.HexToAddress("0x292650fee408320D888e06ed89D938294Ea42f99")
 }
 

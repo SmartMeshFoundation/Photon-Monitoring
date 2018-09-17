@@ -87,6 +87,7 @@ func Delegate(w rest.ResponseWriter, r *rest.Request) {
 		})
 		return
 	}
+	log.Trace(fmt.Sprintf("req=%s", utils.StringInterface(req, 3)))
 	if verify != nil {
 		err = verify.VerifyDelegate(req, delegater)
 		if err != nil {
@@ -98,7 +99,7 @@ func Delegate(w rest.ResponseWriter, r *rest.Request) {
 			return
 		}
 	}
-	err = db.DelegateNewDelegate(req, delegater)
+	err = db.DelegateNewOrUpdateDelegate(req, delegater)
 	if err != nil {
 		log.Error(err.Error())
 		err2 = w.WriteJson(&delegateResponse{

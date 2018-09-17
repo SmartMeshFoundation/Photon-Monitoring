@@ -13,7 +13,7 @@ import (
 
 //Account save available smt
 type Account struct {
-	Address          string   `storm:"id"`
+	Address          []byte   `storm:"id"`
 	TotalReceivedSmt *big.Int //单增
 	UsedSmt          *big.Int //单增
 	LockedSmt        *big.Int //执行之前先锁定,成功的话,则减去响应的 smt,否则应该退还.
@@ -21,41 +21,45 @@ type Account struct {
 }
 
 func (a *Account) String() string {
-	return fmt.Sprintf("addr=%s,total=%s,used=%s,locked=%s,need=%s", a.Address[:6],
+	return fmt.Sprintf("addr=%s,total=%s,used=%s,locked=%s,need=%s", common.BytesToAddress(a.Address).String(),
 		a.TotalReceivedSmt, a.UsedSmt, a.LockedSmt, a.NeedSmt)
 }
 
 /*
 AccountAddSmt account receive new deposit,amount must be positive
 */
-func (m *ModelDB) AccountAddSmt(addr common.Address, amount *big.Int) {
+func (model *ModelDB) AccountAddSmt(addr common.Address, amount *big.Int) {
+	var err error
 	var a = &Account{}
-	err := m.db.One("Address", addr.String(), a)
+	err = model.db.One("Address", addr[:], a)
 	if err == storm.ErrNotFound {
 		a = &Account{
-			Address:          addr.String(),
+			Address:          addr[:],
 			TotalReceivedSmt: big.NewInt(0),
 			UsedSmt:          big.NewInt(0),
 			LockedSmt:        big.NewInt(0),
 			NeedSmt:          big.NewInt(0),
 		}
-		m.lock.Lock()
-		m.db.Save(a)
-		m.lock.Unlock()
+		model.lock.Lock()
+		err = model.db.Save(a)
+		if err != nil {
+			log.Error(fmt.Sprintf("AccountAddSmt new account err %s", err))
+		}
+		model.lock.Unlock()
 	}
 	a.TotalReceivedSmt.Add(a.TotalReceivedSmt, amount)
-	m.accountSanity(a)
-	err = m.db.UpdateField(a, "TotalReceivedSmt", a.TotalReceivedSmt)
+	model.accountSanity(a)
+	err = model.db.UpdateField(a, "TotalReceivedSmt", a.TotalReceivedSmt)
 	if err != nil {
 		panic(fmt.Sprintf("save account err %s", err))
 	}
 	log.Info(fmt.Sprintf("receive smt %s,now total=%s", amount, a.TotalReceivedSmt))
 }
-func (m *ModelDB) accountUpdateNeedSmt(addr common.Address, amount *big.Int) {
-	a := m.AccountGetAccount(addr)
+func (model *ModelDB) accountUpdateNeedSmt(addr common.Address, amount *big.Int) {
+	a := model.AccountGetAccount(addr)
 	a.NeedSmt = new(big.Int).Set(amount)
-	m.accountSanity(a)
-	err := m.db.Save(a)
+	model.accountSanity(a)
+	err := model.db.Save(a)
 	if err != nil {
 		panic(fmt.Sprintf("save account err %s", err))
 	}
@@ -70,16 +74,16 @@ func AccountAvailable(a *Account) *big.Int {
 }
 
 //AccountIsBalanceEnough returns account has enough balance?
-func (m *ModelDB) AccountIsBalanceEnough(addr common.Address) bool {
-	a := m.AccountGetAccount(addr)
-	m.accountSanity(a)
+func (model *ModelDB) AccountIsBalanceEnough(addr common.Address) bool {
+	a := model.AccountGetAccount(addr)
+	model.accountSanity(a)
 	av := AccountAvailable(a)
 	return av.Cmp(a.NeedSmt) >= 0
 }
 
 //AccountLockSmt returns account Locked smt,which means there are tx running
-func (m *ModelDB) AccountLockSmt(addr common.Address, amount *big.Int) error {
-	a := m.AccountGetAccount(addr)
+func (model *ModelDB) AccountLockSmt(addr common.Address, amount *big.Int) error {
+	a := model.AccountGetAccount(addr)
 	av := AccountAvailable(a)
 	if av.Cmp(amount) < 0 {
 		return fmt.Errorf("balance not enough,availabe=%s,amount=%s", av, amount)
@@ -89,43 +93,43 @@ func (m *ModelDB) AccountLockSmt(addr common.Address, amount *big.Int) error {
 	}
 	a.LockedSmt.Add(a.LockedSmt, amount)
 	a.NeedSmt.Sub(a.NeedSmt, amount)
-	m.accountSanity(a)
-	err := m.db.Save(a)
+	model.accountSanity(a)
+	err := model.db.Save(a)
 	return err
 }
 
 //AccountUnlockSmt tx failed
-func (m *ModelDB) AccountUnlockSmt(addr common.Address, amount *big.Int) error {
-	a := m.AccountGetAccount(addr)
+func (model *ModelDB) AccountUnlockSmt(addr common.Address, amount *big.Int) error {
+	a := model.AccountGetAccount(addr)
 	if a.LockedSmt.Cmp(amount) < 0 {
 		return fmt.Errorf("error unlock smt ,unlock amount=%s,locked=%s", amount, a.LockedSmt)
 	}
 	a.LockedSmt.Sub(a.LockedSmt, amount)
-	m.accountSanity(a)
-	err := m.db.Save(a)
+	model.accountSanity(a)
+	err := model.db.Save(a)
 	return err
 }
 
 //AccountUseSmt tx success
-func (m *ModelDB) AccountUseSmt(addr common.Address, amount *big.Int) error {
-	a := m.AccountGetAccount(addr)
+func (model *ModelDB) AccountUseSmt(addr common.Address, amount *big.Int) error {
+	a := model.AccountGetAccount(addr)
 	if a.LockedSmt.Cmp(amount) < 0 {
 		return fmt.Errorf("error unlock smt ,unlock amount=%s,locked=%s", amount, a.LockedSmt)
 	}
 	a.LockedSmt.Sub(a.LockedSmt, amount)
 	a.UsedSmt.Add(a.UsedSmt, amount)
-	m.accountSanity(a)
-	err := m.db.Save(a)
+	model.accountSanity(a)
+	err := model.db.Save(a)
 	return err
 }
 
 //AccountGetAccount returns account info
-func (m *ModelDB) AccountGetAccount(addr common.Address) *Account {
+func (model *ModelDB) AccountGetAccount(addr common.Address) *Account {
 	var a = &Account{}
-	err := m.db.One("Address", addr.String(), a)
+	err := model.db.One("Address", addr[:], a)
 	if err == storm.ErrNotFound {
 		a = &Account{
-			Address:          addr.String(),
+			Address:          addr[:],
 			TotalReceivedSmt: big.NewInt(0),
 			UsedSmt:          big.NewInt(0),
 			LockedSmt:        big.NewInt(0),
@@ -139,7 +143,7 @@ func (m *ModelDB) AccountGetAccount(addr common.Address) *Account {
 	return a
 }
 
-func (m *ModelDB) accountSanity(a *Account) {
+func (model *ModelDB) accountSanity(a *Account) {
 	if a.TotalReceivedSmt.Cmp(utils.BigInt0) < 0 {
 		panic(fmt.Sprintf("totalReceive negative=%s, account=%s\n", a.TotalReceivedSmt, utils.StringInterface(a, 2)))
 	}

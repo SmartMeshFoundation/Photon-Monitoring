@@ -3,8 +3,9 @@ package main
 import (
 	"fmt"
 
+	"github.com/SmartMeshFoundation/SmartRaiden/accounts"
+
 	"encoding/hex"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"path"
@@ -12,7 +13,6 @@ import (
 
 	debug2 "runtime/debug"
 
-	"github.com/SmartMeshFoundation/SmartRaiden"
 	"github.com/SmartMeshFoundation/SmartRaiden-Monitoring/chainservice"
 	"github.com/SmartMeshFoundation/SmartRaiden-Monitoring/internal/debug"
 	"github.com/SmartMeshFoundation/SmartRaiden-Monitoring/models"
@@ -142,59 +142,14 @@ func mainCtx(ctx *cli.Context) error {
 	restful.Start(db, ce)
 	return nil
 }
-func promptAccount(adviceAddress common.Address, keystorePath, passwordfile string) (addr common.Address, keybin []byte) {
-	am := smartraiden.NewAccountManager(keystorePath)
-	if len(am.Accounts) == 0 {
-		log.Error(fmt.Sprintf("No Ethereum accounts found in the directory %s", keystorePath))
-		utils.SystemExit(1)
-	}
-	if !am.AddressInKeyStore(adviceAddress) {
-		if adviceAddress != utils.EmptyAddress {
-			log.Error(fmt.Sprintf("account %s could not be found on the sytstem. aborting...", adviceAddress))
-			utils.SystemExit(1)
-		}
-		shouldPromt := true
-		fmt.Println("The following accounts were found in your machine:")
-		for i := 0; i < len(am.Accounts); i++ {
-			fmt.Printf("%3d -  %s\n", i, am.Accounts[i].Address.String())
-		}
-		fmt.Println("")
-		for shouldPromt {
-			fmt.Printf("Select one of them by index to continue:\n")
-			idx := -1
-			fmt.Scanf("%d", &idx)
-			if idx >= 0 && idx < len(am.Accounts) {
-				shouldPromt = false
-				addr = am.Accounts[idx].Address
-			} else {
-				fmt.Printf("Error: Provided index %d is out of bounds", idx)
-			}
-		}
-	} else {
-		addr = adviceAddress
-	}
-	if len(passwordfile) > 0 {
-		data, err := ioutil.ReadFile(passwordfile)
-		if err != nil {
-			data = []byte(passwordfile)
-		}
-		password := string(data)
-		log.Trace(fmt.Sprintf("password is %s", password))
-		keybin, err = am.GetPrivateKey(addr, password)
-		if err != nil {
-			log.Error(fmt.Sprintf("Incorrect password for %s in file. Aborting ... %s", addr.String(), err))
-			utils.SystemExit(1)
-		}
-	} else {
-		panic("must specified password")
-	}
-	return
-}
 func config(ctx *cli.Context) {
 	var err error
 	params.APIPort = ctx.Int("api-port")
 	address := common.HexToAddress(ctx.String("address"))
-	address, privkeyBin := promptAccount(address, ctx.String("keystore-path"), ctx.String("password-file"))
+	address, privkeyBin, err := accounts.PromptAccount(address, ctx.String("keystore-path"), ctx.String("password-file"))
+	if err != nil {
+		panic(err)
+	}
 	log.Trace(fmt.Sprintf("privkey=%s", common.Bytes2Hex(privkeyBin)))
 	params.Address = address
 	params.PrivKey, err = crypto.ToECDSA(privkeyBin)

@@ -9,7 +9,7 @@ func TestModelDB_DelegateMonitorAdd(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = m.DelegateMonitorAdd(3, "123")
+	err = m.DelegateMonitorAdd(3, []byte("123"))
 	if err != nil {
 		t.Error(err)
 		return

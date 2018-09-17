@@ -92,17 +92,17 @@ Second step detection for normal closure IsDbCrashedLastTime
 Third step  recovers the data according to the second step
 Fourth step mark the database for processing the data normally. MarkDbOpenedStatus
 */
-func (m *ModelDB) MarkDbOpenedStatus() {
-	err := m.db.Set(bucketMeta, "close", false)
+func (model *ModelDB) MarkDbOpenedStatus() {
+	err := model.db.Set(bucketMeta, "close", false)
 	if err != nil {
 		log.Error(fmt.Sprintf("MarkDbOpenedStatus err %s", err))
 	}
 }
 
 //IsDbCrashedLastTime return true when quit but  db not closed
-func (m *ModelDB) IsDbCrashedLastTime() bool {
+func (model *ModelDB) IsDbCrashedLastTime() bool {
 	var closeFlag bool
-	err := m.db.Get(bucketMeta, "close", &closeFlag)
+	err := model.db.Get(bucketMeta, "close", &closeFlag)
 	if err != nil {
 		log.Crit(fmt.Sprintf("db meta data error"))
 	}
@@ -110,17 +110,17 @@ func (m *ModelDB) IsDbCrashedLastTime() bool {
 }
 
 //CloseDB close db
-func (m *ModelDB) CloseDB() {
-	m.lock.Lock()
-	err := m.db.Set(bucketMeta, "close", true)
+func (model *ModelDB) CloseDB() {
+	model.lock.Lock()
+	err := model.db.Set(bucketMeta, "close", true)
 	if err != nil {
 		log.Error(fmt.Sprintf("set close err %s", err))
 	}
-	err = m.db.Close()
+	err = model.db.Close()
 	if err != nil {
 		log.Error(fmt.Sprintf(" close err %s", err))
 	}
-	m.lock.Unlock()
+	model.lock.Unlock()
 }
 
 func init() {
@@ -130,8 +130,12 @@ func init() {
 	//gob.Register(&ModelDB{}) //cannot save and restore by gob,only avoid noise by gob
 }
 
-func (m *ModelDB) initDb() {
-	m.db.Init(&Account{})
-	m.db.Init(&Delegate{})
-	m.db.Init(&ReceivedTransfer{})
+func (model *ModelDB) initDb() {
+	err := model.db.Init(&Account{})
+	err = model.db.Init(&Delegate{})
+	err = model.db.Init(&ReceivedTransfer{})
+	err = model.db.Init(&RemovedDelegate{})
+	if err != nil {
+		fmt.Printf("init db err %s", err)
+	}
 }

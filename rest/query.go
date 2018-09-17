@@ -55,7 +55,8 @@ func Tx(w rest.ResponseWriter, r *rest.Request) {
 		})
 		return
 	}
-	d := db.DelegatetGet(channel, delegater)
+	channelIdentifier := common.HexToHash(channel)
+	d := db.DelegatetGet(channelIdentifier, delegater)
 	res := &txResponse{
 		Delegate: d,
 	}
@@ -100,7 +101,10 @@ func Fee(w rest.ResponseWriter, r *rest.Request) {
 		Available: models.AccountAvailable(a),
 		NeedSmt:   a.NeedSmt,
 	}
-	w.WriteJson(res)
+	err := w.WriteJson(res)
+	if err != nil {
+
+	}
 }
 
 type feeReponse struct {

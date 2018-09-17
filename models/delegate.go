@@ -1,7 +1,11 @@
 package models
 
 import (
+	"bytes"
+	"encoding/binary"
 	"math/big"
+
+	"github.com/SmartMeshFoundation/SmartRaiden/transfer/mtree"
 
 	"fmt"
 
@@ -14,6 +18,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
+/*
+第三方服务应该保持长期在线,所以他提供的服务总是为最新的 channel,
+所以 openblockNumber 并不关键,在一个 channel 被 settle 以后,他应该自动清除这个 channel 的所有信息.
+*/
 const (
 	//DelegateStatusInit init
 	DelegateStatusInit = 0
@@ -27,6 +35,10 @@ const (
 	DelegateStatusSuccessFinishedByOther = 4
 	//DelegateStatusFailed fail call tx,not engough smt,etc.
 	DelegateStatusFailed = 5
+	//DelegateStatusCooperativeSettled this channel is cooperative settled
+	DelegateStatusCooperativeSettled = 6
+	//DelegateStatusWithdrawed this channel is withdrawed
+	DelegateStatusWithdrawed = 7
 	//TxStatusNotExecute Tx not start
 	TxStatusNotExecute = 0
 	//TxStatusExecuteSuccessFinished this tx success finished
@@ -37,56 +49,100 @@ const (
 
 //Delegate is from app's request and it's tx result
 type Delegate struct {
-	Key            string    `storm:"id"`
-	Address        string    //delegator
-	ChannelAddress string    `storm:"index"` //委托 channel
-	Time           time.Time //委托时间
-	TxTime         time.Time //执行时间
-	TxBlockNumber  int64     //执行开始块
-	MinBlockNumber int64     //Tx最早开始块
-	MaxBlockNumber int64     //Tx 最晚开始块
-	Status         int       `storm:"index"`
-	Error          string
-	Content        *ChannelFor3rd
+	Key                 []byte         `storm:"id"`
+	Address             common.Address //delegator
+	PartnerAddress      common.Address
+	ChannelIdentifier   []byte `storm:"index"` //委托 channel
+	OpenBlockNumber     int64  // open block number of this channel
+	SettleBlockNumber   int64  // closed block number+settle_timeout
+	TokenNetworkAddress common.Address
+	Time                time.Time //委托时间
+	TxTime              time.Time //执行时间
+	TxBlockNumber       int64     //执行开始块
+	MinBlockNumber      int64     //Tx最早开始块
+	MaxBlockNumber      int64     //Tx 最晚开始块
+	Status              int       `storm:"index"`
+	Error               string
+	Content             *ChannelFor3rd
+}
+
+//RemovedDelegate represents a finished delegate, when a channel is settled? or withdrawed?
+type RemovedDelegate struct {
+	Key []byte `storm:"id"`
+	D   Delegate
 }
 
 //UpdateTransfer arguments need to call contract updatetransfer
 type UpdateTransfer struct {
-	Nonce               int64    `json:"nonce"`
-	TransferAmount      *big.Int `json:"transfer_amount"`
-	Locksroot           string   `json:"locksroot"`
-	ExtraHash           string   `json:"extra_hash"`
-	ClosingSignature    string   `json:"closing_signature"`
-	NonClosingSignature string   `json:"non_closing_signature"`
+	Nonce               int64       `json:"nonce"`
+	TransferAmount      *big.Int    `json:"transfer_amount"`
+	Locksroot           common.Hash `json:"locksroot"`
+	ExtraHash           common.Hash `json:"extra_hash"`
+	ClosingSignature    []byte      `json:"closing_signature"`
+	NonClosingSignature []byte      `json:"non_closing_signature"`
 	TxStatus            int
 	TxError             string
 	TxHash              common.Hash
 }
 
-//Withdraw arguments need to call contract Withdraw
-type Withdraw struct {
-	LockedEncoded string `json:"locked_encoded"`
-	MerkleProof   string `json:"merkle_proof"`
-	Secret        string `json:"secret"`
-	TxStatus      int
-	TxError       string
-	TxHash        common.Hash
+//Unlock arguments need to call contract Withdraw
+type Unlock struct {
+	Lock        *mtree.Lock `json:"lock"`
+	MerkleProof []byte      `json:"merkle_proof"`
+	Secret      common.Hash `json:"secret"`
+	Signature   []byte      `json:"signature"`
+	TxStatus    int
+	TxError     string
+	TxHash      common.Hash
 }
 
 //ChannelFor3rd is for 3rd party to call update transfer
 type ChannelFor3rd struct {
-	ChannelAddress string         `json:"channel_address"`
-	UpdateTransfer UpdateTransfer `json:"update_transfer"`
-	Withdraws      []*Withdraw    `json:"withdraws"`
+	ChannelIdentifier  common.Hash    `json:"channel_identifier"`
+	OpenBlockNumber    int64          `json:"open_block_number"`
+	TokenNetworkAddrss common.Address `json:"token_network_address"`
+	PartnerAddress     common.Address `json:"partner_address"`
+	UpdateTransfer     UpdateTransfer `json:"update_transfer"`
+	Unlocks            []*Unlock      `json:"unlocks"`
+	Punishes           []*Punish      `json:"punishes"`
 }
 
-//DelegateNewDelegate  accept a new delegate,error if the previous version of this delegate is running.
-func (m *ModelDB) DelegateNewDelegate(c *ChannelFor3rd, addr common.Address) error {
-	var newsmt, oldsmt *big.Int
-	if !m.delegateCanCreateOrUpdate(c, addr) {
-		return fmt.Errorf("%s is running tx,cannot be replaced", m.delegateKey(c.ChannelAddress, addr))
+//Punish 需要委托给第三方的 punish证据
+type Punish struct {
+	LockHash       common.Hash `json:"lock_hash"` //the whole lock's hash,not lock secret hash
+	AdditionalHash common.Hash `json:"additional_hash"`
+	Signature      []byte      `json:"signature"`
+	TxStatus       int
+	TxError        string
+	TxHash         common.Hash
+}
+
+//DelegateDeleteDelegate move delegate from bucket[Delegate] to bucket[RemovedDelegate]
+func (model *ModelDB) DelegateDeleteDelegate(d *Delegate) error {
+	rd := &RemovedDelegate{
+		D: *d,
 	}
-	d := m.DelegatetGet(c.ChannelAddress, addr)
+	buf := new(bytes.Buffer)
+	_, err := buf.Write(d.ChannelIdentifier)
+	_, err = buf.Write(d.Address[:])
+	err = binary.Write(buf, binary.LittleEndian, d.OpenBlockNumber)
+	rd.Key = buf.Bytes()
+	err = model.db.DeleteStruct(d)
+	if err != nil {
+		return err
+	}
+	err = model.db.Save(rd)
+	return err
+}
+
+//DelegateNewOrUpdateDelegate  accept a new delegate,error if the previous version of this delegate is running.
+func (model *ModelDB) DelegateNewOrUpdateDelegate(c *ChannelFor3rd, addr common.Address) error {
+	channelIdentifier := c.ChannelIdentifier
+	var newsmt, oldsmt *big.Int
+	if !model.delegateCanCreateOrUpdate(c, addr) {
+		return fmt.Errorf("%s is running tx,cannot be replaced", model.delegateKey(c.ChannelIdentifier, addr))
+	}
+	d := model.DelegatetGet(c.ChannelIdentifier, addr)
 	if d.Content != nil && d.Status == DelegateStatusInit && d.Content.UpdateTransfer.Nonce >= c.UpdateTransfer.Nonce {
 		return fmt.Errorf("only delegate newer nonce ,old nonce=%d,new=%d", d.Content.UpdateTransfer.Nonce, c.UpdateTransfer.Nonce)
 	}
@@ -100,23 +156,26 @@ func (m *ModelDB) DelegateNewDelegate(c *ChannelFor3rd, addr common.Address) err
 		oldsmt = big.NewInt(0)
 	}
 	d.Time = time.Now()
-	d.Key = fmt.Sprintf("%s-%s", c.ChannelAddress, addr.String())
-	d.ChannelAddress = c.ChannelAddress
-	d.Address = addr.String()
+	d.Key = model.delegateKey(channelIdentifier, addr)
+	d.ChannelIdentifier = channelIdentifier[:]
+	d.OpenBlockNumber = c.OpenBlockNumber
+	d.Address = addr
 	d.Content = c
+	d.TokenNetworkAddress = c.TokenNetworkAddrss
+	d.PartnerAddress = c.PartnerAddress
 
-	m.lock.Lock()
-	a := m.AccountGetAccount(addr)
+	model.lock.Lock()
+	a := model.AccountGetAccount(addr)
 	log.Trace(fmt.Sprintf("newsmt=%s,oldsmt=%s", newsmt, oldsmt))
 	a.NeedSmt.Add(a.NeedSmt, newsmt)
 	a.NeedSmt.Sub(a.NeedSmt, oldsmt)
 	log.Trace(fmt.Sprintf("account=%s", a))
-	err := m.db.Save(a)
+	err := model.db.Save(a)
 	if err != nil {
 		panic(fmt.Sprintf("db err %s", err))
 	}
-	m.lock.Unlock()
-	err = m.db.Save(d)
+	model.lock.Unlock()
+	err = model.db.Save(d)
 	if err != nil {
 		if err != nil {
 			panic(fmt.Sprintf("db err %s", err))
@@ -126,14 +185,14 @@ func (m *ModelDB) DelegateNewDelegate(c *ChannelFor3rd, addr common.Address) err
 }
 
 //DelegatetGet return the lastest delegate status
-func (m *ModelDB) DelegatetGet(cAddr string, addr common.Address) *Delegate {
-	return m.DelegatetGetByKey(m.delegateKey(cAddr, addr))
+func (model *ModelDB) DelegatetGet(cAddr common.Hash, addr common.Address) *Delegate {
+	return model.DelegatetGetByKey(model.delegateKey(cAddr, addr))
 }
 
 //DelegatetGetByKey return the lastest delegate status
-func (m *ModelDB) DelegatetGetByKey(key string) *Delegate {
+func (model *ModelDB) DelegatetGetByKey(key []byte) *Delegate {
 	var d Delegate
-	err := m.db.One("Key", key, &d)
+	err := model.db.One("Key", key, &d)
 	if err == storm.ErrNotFound {
 		return &d
 	}
@@ -142,9 +201,9 @@ func (m *ModelDB) DelegatetGetByKey(key string) *Delegate {
 	}
 	return &d
 }
-func (m *ModelDB) delegateCanCreateOrUpdate(c *ChannelFor3rd, addr common.Address) bool {
+func (model *ModelDB) delegateCanCreateOrUpdate(c *ChannelFor3rd, addr common.Address) bool {
 	var d Delegate
-	err := m.db.One("Key", m.delegateKey(c.ChannelAddress, addr), &d)
+	err := model.db.One("Key", model.delegateKey(c.ChannelIdentifier, addr), &d)
 	if err == storm.ErrNotFound {
 		return true
 	}
@@ -153,35 +212,41 @@ func (m *ModelDB) delegateCanCreateOrUpdate(c *ChannelFor3rd, addr common.Addres
 	}
 	return d.Status != DelegateStatusRunning
 }
-func (m *ModelDB) delegateKey(cAddr string, addr common.Address) string {
-	return fmt.Sprintf("%s-%s", cAddr, addr.String())
+func (model *ModelDB) delegateKey(cAddr common.Hash, addr common.Address) []byte {
+	var key []byte
+	key = append(key, cAddr[:]...)
+	key = append(key, addr[:]...)
+	return key
 }
 
 //MarkDelegateRunning mark this delegate is running ,deny new version
-func (m *ModelDB) MarkDelegateRunning(cAddr string, addr common.Address) error {
-	d := m.DelegatetGet(cAddr, addr)
+func (model *ModelDB) MarkDelegateRunning(cAddr common.Hash, addr common.Address) error {
+	d := model.DelegatetGet(cAddr, addr)
 	d.Status = DelegateStatusRunning
-	return m.db.Save(d)
+	return model.db.Save(d)
 }
 
 //DelegateSave call when finish a delegate
-func (m *ModelDB) DelegateSave(d *Delegate) {
-	err := m.db.Save(d)
+func (model *ModelDB) DelegateSave(d *Delegate) {
+	err := model.db.Save(d)
 	if err != nil {
 		panic(err)
 	}
 }
 
 //DelegateSetStatus change delegate status
-func (m *ModelDB) DelegateSetStatus(status int, d *Delegate) error {
-	return m.db.UpdateField(d, "Status", status)
+func (model *ModelDB) DelegateSetStatus(status int, d *Delegate) error {
+	return model.db.UpdateField(d, "Status", status)
 }
 
 /*
-DelegateGetByChannelAddress returns the delegate about this channel and not run
+DelegateGetByChannelIdentifier returns the delegate about this channel and not run
 */
-func (m *ModelDB) DelegateGetByChannelAddress(ch common.Address) (ds []*Delegate, err error) {
-	err = m.db.Find("ChannelAddress", ch.String(), &ds)
+func (model *ModelDB) DelegateGetByChannelIdentifier(channelIdentifier common.Hash) (ds []*Delegate, err error) {
+	err = model.db.Find("ChannelIdentifier", channelIdentifier[:], &ds)
+	if err == storm.ErrNotFound {
+		err = nil
+	}
 	return
 }
 
@@ -189,10 +254,35 @@ func (m *ModelDB) DelegateGetByChannelAddress(ch common.Address) (ds []*Delegate
 func CalcNeedSmtForThisChannel(c *ChannelFor3rd) *big.Int {
 	n := new(big.Int)
 	if c.UpdateTransfer.Nonce > 0 {
-		n = n.Add(n, params.SmtUpdatTransfer)
+		n = n.Add(n, params.SmtUpdateTransfer)
 	}
-	for range c.Withdraws {
+	for range c.Unlocks {
 		n = n.Add(n, params.SmtWithdraw)
+	}
+	//惩罚只需成功一次,即可.
+	if len(c.Punishes) > 0 {
+		n = n.Add(n, params.SmtPunish)
+	}
+	return n
+}
+
+//CalceNeedSmtForUpdateBalanceProofAndUnlock returns how much smt need to update balance proof and unlock
+func CalceNeedSmtForUpdateBalanceProofAndUnlock(c *ChannelFor3rd) *big.Int {
+	n := new(big.Int)
+	if c.UpdateTransfer.Nonce > 0 {
+		n = n.Add(n, params.SmtUpdateTransfer)
+	}
+	for range c.Unlocks {
+		n = n.Add(n, params.SmtWithdraw)
+	}
+	return n
+}
+
+//CalceNeedSmtForPunish returns how much smt need to punish
+func CalceNeedSmtForPunish(c *ChannelFor3rd) *big.Int {
+	n := new(big.Int)
+	if len(c.Punishes) > 0 {
+		n = n.Add(n, params.SmtPunish)
 	}
 	return n
 }
