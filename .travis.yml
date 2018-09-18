@@ -6,7 +6,7 @@ install:
 - go get -v github.com/alecthomas/gometalinter
 - gometalinter --install
 script:
-  - go get  ./...
+  #- go get  ./...
   - chmod +x ./goclean.sh
   - ./goclean.sh
   - cd ./cmd/smartraidenmonitoring
