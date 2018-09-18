@@ -89,7 +89,7 @@ func StartMain() {
 	app.Flags = append(app.Flags, debug.Flags...)
 	app.Action = mainCtx
 	app.Name = "smartraidenmonitoring"
-	app.Version = "0.1"
+	app.Version = "0.5"
 	app.Before = func(ctx *cli.Context) error {
 		if err := debug.Setup(ctx); err != nil {
 			return err
