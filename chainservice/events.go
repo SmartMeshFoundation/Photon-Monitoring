@@ -275,6 +275,8 @@ func (ce *ChainEvents) handleStateChange(st transfer.StateChange) {
 		ce.handleCooperativeSettledStateChange(st2)
 	case *mediatedtransfer.ContractChannelWithdrawStateChange:
 		ce.handleWithdrawStateChange(st2)
+	case *mediatedtransfer.ContractSettledStateChange:
+		ce.handleSettledStateChange(st2)
 	}
 }
 func (ce *ChainEvents) handleBlockNumber(n int64) {
