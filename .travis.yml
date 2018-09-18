@@ -9,6 +9,7 @@ script:
   - go get  ./...
   - chmod +x ./goclean.sh
   - ./goclean.sh
+  - cd ./cmd/smartraidenmonitoring
   - go build
   - pwd
 

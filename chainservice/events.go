@@ -147,17 +147,17 @@ func (ce *ChainEvents) handleClosedStateChange(st2 *mediatedtransfer.ContractClo
 			return
 		}
 	} else {
+		tokenNetwork, err := ce.bcs.TokenNetwork(st2.TokenNetworkAddress)
+		if err != nil {
+			log.Error(fmt.Sprintf("recevied close event ,but toke network %s not exist", st2.TokenNetworkAddress.String()))
+			return
+		}
+		_, settleBlockNumber, _, _, settleTimeout, err := tokenNetwork.GetContract().GetChannelInfoByChannelIdentifier(nil, st2.ChannelIdentifier)
+		if err != nil {
+			log.Error(fmt.Sprintf("channel %s get settle timeout err %s", st2.ChannelIdentifier.String(), err))
+			return
+		}
 		for _, d := range ds {
-			tokenNetwork, err := ce.bcs.TokenNetwork(st2.TokenNetworkAddress)
-			if err != nil {
-				log.Error(fmt.Sprintf("recevied close event ,but toke network %s not exist", st2.TokenNetworkAddress.String()))
-				continue
-			}
-			_, settleBlockNumber, _, _, settleTimeout, err := tokenNetwork.GetContract().GetChannelInfoByChannelIdentifier(nil, st2.ChannelIdentifier)
-			if err != nil {
-				log.Error(fmt.Sprintf("channel %s get settle timeout err %s", st2.ChannelIdentifier.String(), err))
-				continue
-			}
 			/*
 				代理惩罚部分统一在通道 settle time out 以后进行,避免和真正的参与方发生冲突.
 			*/
