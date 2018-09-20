@@ -257,7 +257,7 @@ func CalcNeedSmtForThisChannel(c *ChannelFor3rd) *big.Int {
 		n = n.Add(n, params.SmtUpdateTransfer)
 	}
 	for range c.Unlocks {
-		n = n.Add(n, params.SmtWithdraw)
+		n = n.Add(n, params.SmtUnlock)
 	}
 	//惩罚只需成功一次,即可.
 	if len(c.Punishes) > 0 {
@@ -273,7 +273,7 @@ func CalceNeedSmtForUpdateBalanceProofAndUnlock(c *ChannelFor3rd) *big.Int {
 		n = n.Add(n, params.SmtUpdateTransfer)
 	}
 	for range c.Unlocks {
-		n = n.Add(n, params.SmtWithdraw)
+		n = n.Add(n, params.SmtUnlock)
 	}
 	return n
 }

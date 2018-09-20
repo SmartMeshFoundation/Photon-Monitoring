@@ -13,8 +13,8 @@ import (
 	"github.com/ethereum/go-ethereum/node"
 )
 
-//SmtWithdraw needs to call one withdraw
-var SmtWithdraw *big.Int
+//SmtUnlock needs to call one withdraw
+var SmtUnlock *big.Int
 
 //SmtUpdateTransfer needs to call update transfer
 var SmtUpdateTransfer *big.Int
@@ -47,7 +47,7 @@ var DataDir string
 var DataBasePath string
 
 func init() {
-	SmtWithdraw = big.NewInt(1)
+	SmtUnlock = big.NewInt(1)
 	SmtPunish = big.NewInt(2)
 	SmtUpdateTransfer = big.NewInt(3)
 	SmtAddress = common.HexToAddress("0x292650fee408320D888e06ed89D938294Ea42f99")

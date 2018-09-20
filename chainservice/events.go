@@ -176,16 +176,19 @@ func (ce *ChainEvents) handleClosedStateChange(st2 *mediatedtransfer.ContractClo
 				ce.db.DelegateSave(d)
 				continue
 			}
-			/*
-				代理只能在过settle time out 过半进行
-			*/
-			blockNumber := settleBlockNumber - settleTimeout/2 + 1
-			err = ce.db.DelegateMonitorAdd(int64(blockNumber), d.Key)
-			if err != nil {
-				log.Error(fmt.Sprintf("DelegateMonitorAdd err %s", err))
-			}
+			//只有 punish, 没有 BalanceProof 的委托也是允许的
+			if d.Content.UpdateTransfer.Nonce > 0 {
+				/*
+					代理只能在过settle time out 过半进行
+				*/
+				blockNumber := settleBlockNumber - settleTimeout/2 + 1
+				err = ce.db.DelegateMonitorAdd(int64(blockNumber), d.Key)
+				if err != nil {
+					log.Error(fmt.Sprintf("DelegateMonitorAdd err %s", err))
+				}
 
-			log.Info(fmt.Sprintf("%s will updatedTransfer @ %d,closedBlock=%d", d.Key, blockNumber, st2.ClosedBlock))
+				log.Info(fmt.Sprintf("%s will updatedTransfer @ %d,closedBlock=%d", d.Key, blockNumber, st2.ClosedBlock))
+			}
 		}
 	}
 }
@@ -361,13 +364,13 @@ func (ce *ChainEvents) updateTransfer(d *models.Delegate) {
 				hasErr = true
 				w.TxStatus = models.TxStatusExecueteErrorFinished
 				w.TxError = err.Error()
-				err2 := ce.db.AccountUnlockSmt(addr, params.SmtWithdraw)
+				err2 := ce.db.AccountUnlockSmt(addr, params.SmtUnlock)
 				if err2 != nil {
 					log.Error(fmt.Sprintf("AccountUnlockSmt err %s", err))
 				}
 			} else {
 				w.TxStatus = models.TxStatusExecuteSuccessFinished
-				err2 := ce.db.AccountUseSmt(addr, params.SmtWithdraw)
+				err2 := ce.db.AccountUseSmt(addr, params.SmtUnlock)
 				if err2 != nil {
 					log.Error(fmt.Sprintf("AccountUseSmt err %s", err))
 				}
