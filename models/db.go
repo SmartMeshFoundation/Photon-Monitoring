@@ -62,6 +62,11 @@ func OpenDb(dbPath string) (model *ModelDB, err error) {
 			log.Crit(fmt.Sprintf("unable to create db "))
 			return
 		}
+		err = model.db.Set(bucketToken, keyToken, make(AddressMap))
+		if err != nil {
+			log.Crit(fmt.Sprintf("unable to create db "))
+			return
+		}
 		model.initDb()
 		model.MarkDbOpenedStatus()
 	} else {

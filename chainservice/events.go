@@ -59,9 +59,13 @@ func NewChainEvents(key *ecdsa.PrivateKey, client *helper.SafeEthClient, tokenNe
 	if registry == nil {
 		panic("startup error : cannot get registry")
 	}
+	token2TokenNetworks, err := db.GetAllTokens()
+	if err != nil {
+		panic(err)
+	}
 	return &ChainEvents{
 		client:          client,
-		be:              blockchain.NewBlockChainEvents(client, bcs, nil),
+		be:              blockchain.NewBlockChainEvents(client, bcs, token2TokenNetworks),
 		bcs:             bcs,
 		key:             key,
 		db:              db,
@@ -256,6 +260,16 @@ func (ce *ChainEvents) handleWithdrawStateChange(st2 *mediatedtransfer.ContractC
 }
 
 /*
+无法从连上直接获取当前注册了哪些token,只能按照事件检索.
+*/
+func (ce *ChainEvents) handleTokenAddedStateChange(st *mediatedtransfer.ContractTokenAddedStateChange) {
+	err := ce.db.AddToken(st.TokenAddress, st.TokenNetworkAddress)
+	if err != nil {
+		log.Error(fmt.Sprintf("handleTokenAddedStateChange err=%s, st=%s", err, utils.StringInterface1(st)))
+	}
+}
+
+/*
 第三方监控服务目前只做三件事情:
 1. update balance proof
 2. unlock
@@ -279,6 +293,8 @@ func (ce *ChainEvents) handleStateChange(st transfer.StateChange) {
 		ce.handleWithdrawStateChange(st2)
 	case *mediatedtransfer.ContractSettledStateChange:
 		ce.handleSettledStateChange(st2)
+	case *mediatedtransfer.ContractTokenAddedStateChange:
+		ce.handleTokenAddedStateChange(st2)
 	}
 }
 func (ce *ChainEvents) handleBlockNumber(n int64) {
@@ -313,6 +329,7 @@ func (ce *ChainEvents) handleBlockNumber(n int64) {
 			}
 		}
 	}
+	ce.db.SaveLatestBlockNumber(n)
 }
 
 /*
