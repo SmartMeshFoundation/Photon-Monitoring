@@ -11,7 +11,6 @@ import (
 
 	"github.com/SmartMeshFoundation/SmartRaiden/encoding"
 	"github.com/SmartMeshFoundation/SmartRaiden/log"
-	"github.com/SmartMeshFoundation/SmartRaiden/network/helper"
 	"github.com/SmartMeshFoundation/SmartRaiden/network/rpc/contracts"
 	"github.com/SmartMeshFoundation/SmartRaiden/utils"
 	"github.com/ethereum/go-ethereum/common"
@@ -19,7 +18,8 @@ import (
 )
 
 //PrivateRopstenRegistryAddress test registry address, todo use env
-var PrivateRopstenRegistryAddress = common.HexToAddress(os.Getenv("TOKEN_NETWORK_REGISTRY")) // params.ROPSTEN_REGISTRY_ADDRESS
+var PrivateRopstenRegistryAddress = common.HexToAddress(os.Getenv("TOKEN_NETWORK_REGISTRY"))
+
 //TestRPCEndpoint test eth rpc url, todo use env
 var TestRPCEndpoint = os.Getenv("ETHRPCENDPOINT")
 
@@ -31,6 +31,7 @@ func init() {
 		keybin, err := hex.DecodeString(os.Getenv("KEY1"))
 		if err != nil {
 			//启动错误不要用 log, 那时候 log 还没准备好
+			// do not use log to print start error, it's not ready
 			panic(fmt.Sprintf("err %s", err))
 		}
 		TestPrivKey, err = crypto.ToECDSA(keybin)
@@ -43,12 +44,13 @@ func init() {
 
 //MakeTestBlockChainService creat test BlockChainService
 func MakeTestBlockChainService() *BlockChainService {
-	conn, err := helper.NewSafeClient(TestRPCEndpoint)
-	//conn, err := ethclient.Dial("ws://" + node.DefaultWSEndpoint())
-	if err != nil {
-		fmt.Printf("Failed to connect to the Ethereum client: %s\n", err)
-	}
-	return NewBlockChainService(TestPrivKey, PrivateRopstenRegistryAddress, conn)
+	//conn, err := helper.NewSafeClient(TestRPCEndpoint)
+	////conn, err := ethclient.Dial("ws://" + node.DefaultWSEndpoint())
+	//if err != nil {
+	//	fmt.Printf("Failed to connect to the Ethereum client: %s\n", err)
+	//}
+	//return NewBlockChainService(TestPrivKey, PrivateRopstenRegistryAddress, conn)
+	return nil
 }
 
 //GetTestChannelUniqueID for test only,get from env

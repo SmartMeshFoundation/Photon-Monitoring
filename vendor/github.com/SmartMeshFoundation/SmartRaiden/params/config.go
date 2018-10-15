@@ -25,20 +25,27 @@ type NetworkMode int
 
 const (
 	//NoNetwork 节点不对外暴露网络接口,仅供测试使用
+	// NoNetwork : Node does not expose interface, just for case.
 	NoNetwork NetworkMode = iota + 1
 	//UDPOnly 通过udp ip 端口对外暴露服务,可以使用 stun,upnp 等方式,依赖节点发现合约或者直接告知其他节点 ip 端口
+	// UDPOnly : expose service via udp ip, we can use stun, upnp and node to find contracts or tell other nodes with ip port.
 	UDPOnly
 	//XMPPOnly 通过XMPP服务器进行通信
+	// XMPPOnly : communicate via XMPP server.
 	XMPPOnly
 	//MixUDPXMPP 适应无网通信需要,将上面两种方式混合使用,有网时使用 ice 建立连接,无网时则使用 udp 直接暴露 ip 端口
+	// MixUDPXMPP : used for Internet-free network, combining UDPOnly and XMPPOnly.
+	// While Internet, it use ice to create connection; while Internet-free, it use udp to expose ip port.
 	MixUDPXMPP
+	//MixUDPMatrix Matrix and UDP at the same time
+	MixUDPMatrix
 )
 
 //Config is configuration for Raiden,
 type Config struct {
+	EthRPCEndPoint            string
 	Host                      string
 	Port                      int
-	PrivateKeyHex             string
 	PrivateKey                *ecdsa.PrivateKey
 	RevealTimeout             int
 	SettleTimeout             int
@@ -65,7 +72,6 @@ type Config struct {
 //DefaultConfig default config
 var DefaultConfig = Config{
 	Port:          InitialPort,
-	PrivateKeyHex: "",
 	RevealTimeout: DefaultRevealTimeout,
 	SettleTimeout: DefaultSettleTimeout,
 	Protocol: protocolConfig{
@@ -76,7 +82,6 @@ var DefaultConfig = Config{
 	},
 	UseRPC:            true,
 	UseConsole:        false,
-	RegistryAddress:   SpectrumTestNetRegistryAddress,
 	MsgTimeout:        100 * time.Second,
 	EnableHealthCheck: false,
 	XMPPServer:        DefaultXMPPServer,

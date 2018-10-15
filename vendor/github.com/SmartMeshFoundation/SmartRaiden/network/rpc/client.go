@@ -15,8 +15,10 @@ import (
 
 	"github.com/SmartMeshFoundation/SmartRaiden/log"
 	"github.com/SmartMeshFoundation/SmartRaiden/network/helper"
+	"github.com/SmartMeshFoundation/SmartRaiden/network/netshare"
 	"github.com/SmartMeshFoundation/SmartRaiden/network/rpc/contracts"
 	"github.com/SmartMeshFoundation/SmartRaiden/params"
+	"github.com/SmartMeshFoundation/SmartRaiden/utils"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -48,38 +50,32 @@ type BlockChainService struct {
 	//NodeAddress is address of this node
 	NodeAddress common.Address
 	//RegistryAddress registy contract address
-	RegistryAddress     common.Address
-	SecretRegistryProxy *SecretRegistryProxy
 	RegistryProxy       *RegistryProxy
+	SecretRegistryProxy *SecretRegistryProxy
 	//Client if eth rpc client
 	Client          *helper.SafeEthClient
 	addressTokens   map[common.Address]*TokenProxy
 	addressChannels map[common.Address]*TokenNetworkProxy
 	//Auth needs by call on blockchain todo remove this
-	Auth      *bind.TransactOpts
-	queryOpts *bind.CallOpts
+	Auth *bind.TransactOpts
 }
 
 //NewBlockChainService create BlockChainService
-func NewBlockChainService(privKey *ecdsa.PrivateKey, registryAddress common.Address, client *helper.SafeEthClient) *BlockChainService {
-	bcs := &BlockChainService{
-		PrivKey:         privKey,
-		NodeAddress:     crypto.PubkeyToAddress(privKey.PublicKey),
-		RegistryAddress: registryAddress,
+func NewBlockChainService(privateKey *ecdsa.PrivateKey, registryAddress common.Address, client *helper.SafeEthClient) (bcs *BlockChainService, err error) {
+	bcs = &BlockChainService{
+		PrivKey:         privateKey,
+		NodeAddress:     crypto.PubkeyToAddress(privateKey.PublicKey),
 		Client:          client,
 		addressTokens:   make(map[common.Address]*TokenProxy),
 		addressChannels: make(map[common.Address]*TokenNetworkProxy),
-		Auth:            bind.NewKeyedTransactor(privKey),
-	}
-	bcs.queryOpts = &bind.CallOpts{
-		Pending: false,
-		From:    bcs.NodeAddress,
-		Context: GetQueryConext(),
+		Auth:            bind.NewKeyedTransactor(privateKey),
 	}
 	// remove gas limit config and let it calculate automatically
 	//bcs.Auth.GasLimit = uint64(params.GasLimit)
 	bcs.Auth.GasPrice = big.NewInt(params.GasPrice)
-	return bcs
+
+	bcs.Registry(registryAddress, client.Status == netshare.Connected)
+	return bcs, nil
 }
 func (bcs *BlockChainService) getQueryOpts() *bind.CallOpts {
 	return &bind.CallOpts{
@@ -175,32 +171,54 @@ func (bcs *BlockChainService) TokenNetworkWithoutCheck(address common.Address) (
 }
 
 // Registry Return a proxy to interact with Registry.
-func (bcs *BlockChainService) Registry(address common.Address) (t *RegistryProxy) {
+func (bcs *BlockChainService) Registry(address common.Address, hasConnectChain bool) (t *RegistryProxy) {
 	if bcs.RegistryProxy != nil {
 		return bcs.RegistryProxy
 	}
-	reg, err := contracts.NewTokenNetworkRegistry(address, bcs.Client)
-	if err != nil {
-		log.Error(fmt.Sprintf("NewRegistry %s err %s ", address.String(), err))
-		return
+	r := &RegistryProxy{
+		Address: address,
+		bcs:     bcs,
 	}
-	r := &RegistryProxy{address, bcs, reg}
-	secAddr, err := r.registry.SecretRegistryAddress(nil)
-	if err != nil {
-		log.Error(fmt.Sprintf("get Secret_registry_address %s", err))
-		return
-	}
-	s, err := contracts.NewSecretRegistry(secAddr, bcs.Client)
-	if err != nil {
-		log.Error(fmt.Sprintf("NewSecretRegistry err %s", err))
-		return
+	if hasConnectChain {
+		reg, err := contracts.NewTokenNetworkRegistry(address, bcs.Client)
+		if err != nil {
+			log.Error(fmt.Sprintf("NewRegistry %s err %s ", address.String(), err))
+			return
+		}
+		r.registry = reg
+		secAddr, err := r.registry.SecretRegistryAddress(nil)
+		if err != nil {
+			log.Error(fmt.Sprintf("get Secret_registry_address %s", err))
+			return
+		}
+		s, err := contracts.NewSecretRegistry(secAddr, bcs.Client)
+		if err != nil {
+			log.Error(fmt.Sprintf("NewSecretRegistry err %s", err))
+			return
+		}
+		bcs.SecretRegistryProxy = &SecretRegistryProxy{
+			Address:          secAddr,
+			bcs:              bcs,
+			registry:         s,
+			RegisteredSecret: make(map[common.Hash]*sync.Mutex),
+		}
 	}
 	bcs.RegistryProxy = r
-	bcs.SecretRegistryProxy = &SecretRegistryProxy{
-		Address:          secAddr,
-		bcs:              bcs,
-		registry:         s,
-		RegisteredSecret: make(map[common.Hash]*sync.Mutex),
-	}
 	return bcs.RegistryProxy
+}
+
+// GetRegistryAddress :
+func (bcs *BlockChainService) GetRegistryAddress() common.Address {
+	if bcs.RegistryProxy != nil {
+		return bcs.RegistryProxy.Address
+	}
+	return utils.EmptyAddress
+}
+
+// GetSecretRegistryAddress :
+func (bcs *BlockChainService) GetSecretRegistryAddress() common.Address {
+	if bcs.SecretRegistryProxy != nil {
+		return bcs.SecretRegistryProxy.Address
+	}
+	return utils.EmptyAddress
 }

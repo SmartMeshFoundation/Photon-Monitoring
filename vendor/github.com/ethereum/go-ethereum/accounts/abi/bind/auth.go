@@ -20,7 +20,9 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"io"
+	"io/ioutil"
 
+	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -29,7 +31,15 @@ import (
 // NewTransactor is a utility method to easily create a transaction signer from
 // an encrypted json key stream and the associated passphrase.
 func NewTransactor(keyin io.Reader, passphrase string) (*TransactOpts, error) {
-	return nil, errors.New("not support")
+	json, err := ioutil.ReadAll(keyin)
+	if err != nil {
+		return nil, err
+	}
+	key, err := keystore.DecryptKey(json, passphrase)
+	if err != nil {
+		return nil, err
+	}
+	return NewKeyedTransactor(key.PrivateKey), nil
 }
 
 // NewKeyedTransactor is a utility method to easily create a transaction signer

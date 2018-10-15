@@ -3,12 +3,8 @@ package channel
 import (
 	"math/big"
 
-	"fmt"
-
 	"os"
 
-	"github.com/SmartMeshFoundation/SmartRaiden/log"
-	"github.com/SmartMeshFoundation/SmartRaiden/network/helper"
 	"github.com/SmartMeshFoundation/SmartRaiden/network/rpc"
 	"github.com/SmartMeshFoundation/SmartRaiden/network/rpc/contracts"
 	"github.com/SmartMeshFoundation/SmartRaiden/transfer/mtree"
@@ -17,15 +13,16 @@ import (
 )
 
 func newTestBlockChainService() *rpc.BlockChainService {
-	conn, err := helper.NewSafeClient(rpc.TestRPCEndpoint)
-	if err != nil {
-		log.Crit(fmt.Sprintf("Failed to connect to the Ethereum client: %s", err))
-	}
-	privkey, _ := utils.MakePrivateKeyAddress()
-	if err != nil {
-		log.Crit("Failed to create authorized transactor: ", err)
-	}
-	return rpc.NewBlockChainService(privkey, rpc.PrivateRopstenRegistryAddress, conn)
+	//conn, err := helper.NewSafeClient(rpc.TestRPCEndpoint)
+	//if err != nil {
+	//	log.Crit(fmt.Sprintf("Failed to connect to the Ethereum client: %s", err))
+	//}
+	//privkey, _ := utils.MakePrivateKeyAddress()
+	//if err != nil {
+	//	log.Crit("Failed to create authorized transactor: ", err)
+	//}
+	//return rpc.NewBlockChainService(privkey, rpc.PrivateRopstenRegistryAddress, conn)
+	return nil
 }
 
 var testFuncRegisterChannelForHashlock = func(channel *Channel, hashlock common.Hash) {}
@@ -33,7 +30,7 @@ var testFuncRegisterChannelForHashlock = func(channel *Channel, hashlock common.
 func makeTestExternState() *ExternalState {
 	bcs := newTestBlockChainService()
 	//must provide a valid netting channel address
-	tokenNetwork, err := bcs.TokenNetwork(common.HexToAddress(os.Getenv("TOKENNETWORK")))
+	tokenNetwork, err := bcs.TokenNetwork(common.HexToAddress(os.Getenv("TOKEN_NETWORK")))
 	if err != nil {
 		panic(err)
 	}

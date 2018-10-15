@@ -2,10 +2,11 @@ package params
 
 import (
 	"fmt"
-	"math/big"
-
 	"time"
 
+	"math/big"
+
+	"github.com/SmartMeshFoundation/SmartRaiden/utils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/params"
 )
@@ -25,7 +26,7 @@ const defaultProtocolThrottleFillRate = 10.
 const defaultprotocolRetryInterval = 1.
 
 //DefaultRevealTimeout blocks needs to update transfer
-const DefaultRevealTimeout = 5
+var DefaultRevealTimeout = 10
 
 //DefaultSettleTimeout settle time of channel
 const DefaultSettleTimeout = 600
@@ -72,12 +73,18 @@ const DefaultTestXMPPServer = "193.112.248.133:5222" //"182.254.155.208:5222"
 var ContractSignaturePrefix = []byte("\x19Ethereum Signed Message:\n")
 
 const (
-	ContractBalanceProofMessageLength         = "176"
+	//ContractBalanceProofMessageLength balance proof  length
+	ContractBalanceProofMessageLength = "176"
+	//ContractBalanceProofDelegateMessageLength update balance proof delegate length
 	ContractBalanceProofDelegateMessageLength = "144"
-	ContractCooperativeSettleMessageLength    = "176"
-	ContractDisposedProofMessageLength        = "136"
-	ContractWithdrawProofMessageLength        = "156"
-	ContractUnlockDelegateProofMessageLength  = "188"
+	//ContractCooperativeSettleMessageLength cooperative settle channel proof length
+	ContractCooperativeSettleMessageLength = "176"
+	//ContractDisposedProofMessageLength annouce disposed proof length
+	ContractDisposedProofMessageLength = "136"
+	//ContractWithdrawProofMessageLength withdraw proof length
+	ContractWithdrawProofMessageLength = "156"
+	//ContractUnlockDelegateProofMessageLength unlock delegate proof length
+	ContractUnlockDelegateProofMessageLength = "188"
 )
 
 func init() {
@@ -91,6 +98,14 @@ MobileMode works on mobile device, 移动设备模式,这时候 smartraiden 并�
 2. 对于网络通信的处理要更谨慎
 3. 对于资源的消耗如何控制?
 */
+/*
+ *	MobileMode : a boolean value to adapt with mobile modes.
+ *
+ *	Note : if true, then smartraiden is not an individual process, work mode is about to change.
+ *		1. not support exit arbitrarily.
+ *		2. handle internet communication more prudent.
+ *		3. How to control amount of resource consumption.
+ */
 var MobileMode bool
 
 /*
@@ -98,5 +113,38 @@ InTest are we test now?
 */
 var InTest = true
 
+// DefaultChainID :
+var DefaultChainID = big.NewInt(0)
+
 //ChainID of this tokenNetwork
-var ChainID = big.NewInt(8888)
+var ChainID = DefaultChainID
+
+//MatrixServerConfig matrix server config
+var MatrixServerConfig = map[string]string{
+	"transport01.smartmesh.cn": "http://transport01.smartmesh.cn:8008",
+	"transport02.smartmesh.cn": "http://transport02.smartmesh.cn:8008",
+	"transport03.smartmesh.cn": "http://transport03.smartmesh.cn:8008",
+}
+
+//AliasFragment  is discovery AliasFragment
+const AliasFragment = "discovery"
+
+//DiscoveryServer is discovery server
+const DiscoveryServer = "transport01.smartmesh.cn"
+
+//NETWORKNAME Specify the network name of the Ethereum network to run SmartRaiden on
+var NETWORKNAME = "ropsten"
+
+//GenesisBlockHashToDefaultRegistryAddress :
+var GenesisBlockHashToDefaultRegistryAddress = map[common.Hash]common.Address{
+	// spectrum
+	common.HexToHash("0x57e682b80257aad73c4f3ad98d20435b4e1644d8762ef1ea1ff2806c27a5fa3d"): utils.EmptyAddress,
+	// spectrum test net
+	common.HexToHash("0xd011e2cc7f241996a074e2c48307df3971f5f1fe9e1f00cfa704791465d5efc3"): utils.EmptyAddress,
+	// ethereum
+	common.HexToHash("0x88e96d4537bea4d9c05d12549907b32561d3bf31f45aae734cdc119f13406cb6"): utils.EmptyAddress,
+	// ethereum test net
+	common.HexToHash("0x41800b5c3f1717687d85fc9018faac0a6e90b39deaa0b99e7fe4fe796ddeb26a"): utils.EmptyAddress,
+	// ethereum private
+	common.HexToHash("0x38a88a9ddffe522df5c07585a7953f8c011c94327a494188bd0cc2410dc40a1a"): common.HexToAddress("0xf86D80dcFE02fDfadA663ab5df8186e15aC99232"),
+}
