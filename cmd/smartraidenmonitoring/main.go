@@ -101,7 +101,10 @@ func StartMain() {
 		debug.Exit()
 		return nil
 	}
-	app.Run(os.Args)
+	err := app.Run(os.Args)
+	if err != nil {
+		log.Error(fmt.Sprintf("run err %s", err))
+	}
 }
 
 func mainCtx(ctx *cli.Context) error {
@@ -125,7 +128,11 @@ func mainCtx(ctx *cli.Context) error {
 	sq := smt.NewSmtQuery(params.RaidenURL, db, 0)
 	sq.Start()
 	ce := chainservice.NewChainEvents(params.PrivKey, client, params.RegistryAddress, db)
-	ce.Start()
+	err = ce.Start()
+	if err != nil {
+		log.Error(fmt.Sprintf("ce start err =%s ", err))
+		utils.SystemExit(3)
+	}
 	/*
 		quit handler
 	*/

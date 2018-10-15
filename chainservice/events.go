@@ -51,18 +51,17 @@ type ChainEvents struct {
 //NewChainEvents create chain events
 func NewChainEvents(key *ecdsa.PrivateKey, client *helper.SafeEthClient, tokenNetworkRegistryAddress common.Address, db *models.ModelDB) *ChainEvents {
 	log.Trace(fmt.Sprintf("tokenNetworkRegistryAddress %s", tokenNetworkRegistryAddress.String()))
-	bcs := rpc.NewBlockChainService(key, tokenNetworkRegistryAddress, client)
-	registry := bcs.Registry(tokenNetworkRegistryAddress)
-	if registry == nil {
-		panic("startup error : cannot get registry")
-	}
-	secretRegistryAddress, err := registry.GetContract().SecretRegistryAddress(nil)
+	bcs, err := rpc.NewBlockChainService(key, tokenNetworkRegistryAddress, client)
 	if err != nil {
 		panic(err)
 	}
+	registry := bcs.Registry(tokenNetworkRegistryAddress, true)
+	if registry == nil {
+		panic("startup error : cannot get registry")
+	}
 	return &ChainEvents{
 		client:          client,
-		be:              blockchain.NewBlockChainEvents(client, tokenNetworkRegistryAddress, secretRegistryAddress, nil),
+		be:              blockchain.NewBlockChainEvents(client, bcs, nil),
 		bcs:             bcs,
 		key:             key,
 		db:              db,
