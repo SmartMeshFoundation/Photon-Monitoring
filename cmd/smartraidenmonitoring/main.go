@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/SmartMeshFoundation/SmartRaiden/accounts"
 
@@ -34,6 +35,11 @@ func main() {
 
 func init() {
 	debug2.SetTraceback("crash")
+	log.LocationTrims = append(log.LocationTrims,
+		"github.com/SmartMeshFoundation/SmartRaiden-Monitoring/vendor/github.com/SmartMeshFoundation/SmartRaiden/",
+		"github.com/SmartMeshFoundation/SmartRaiden-Monitoring",
+	)
+
 }
 
 func panicOnNullValue() {
@@ -84,6 +90,21 @@ func StartMain() {
 			Name:  "smt",
 			Usage: "smt address",
 			Value: params.SmtAddress.String(),
+		},
+		cli.StringFlag{
+			Name:  "unlock-fee",
+			Usage: "fee for a unlock Transaction",
+			Value: "1000000000000000000",
+		},
+		cli.StringFlag{
+			Name:  "punish-fee",
+			Usage: "fee for a punish Transaction",
+			Value: "2000000000000000000",
+		},
+		cli.StringFlag{
+			Name:  "update-transfer-fee",
+			Usage: "fee for update transfer Transaction ",
+			Value: "3000000000000000000",
 		},
 	}
 	app.Flags = append(app.Flags, debug.Flags...)
@@ -193,4 +214,25 @@ func config(ctx *cli.Context) {
 	databasePath := filepath.Join(userDbPath, "log.db")
 	params.DataBasePath = databasePath
 	params.SmtAddress = common.HexToAddress(ctx.String("smt"))
+	bi, b := new(big.Int).SetString(ctx.String("unlock-fee"), 10)
+	if !b {
+		log.Error(fmt.Sprintf("unlock-fee arg err %s", ctx.String("unlock-fee")))
+		utils.SystemExit(1)
+	}
+	params.SmtUnlock = bi
+	bi, b = new(big.Int).SetString(ctx.String("punish-fee"), 10)
+	if !b {
+		log.Error(fmt.Sprintf("punish-fee arg err %s", ctx.String("unlock-fee")))
+		utils.SystemExit(1)
+	}
+	params.SmtPunish = bi
+	bi, b = new(big.Int).SetString(ctx.String("update-transfer-fee"), 10)
+	if !b {
+		log.Error(fmt.Sprintf("update-transfer-fee arg err %s", ctx.String("unlock-fee")))
+		utils.SystemExit(1)
+	}
+	params.SmtUpdateTransfer = bi
+	log.Info(fmt.Sprintf("unlockfee=%s,punishfee=%s,updatetransferfee=%s,smtaddress=%s",
+		params.SmtUnlock, params.SmtPunish, params.SmtUpdateTransfer, params.SmtAddress.String(),
+	))
 }
