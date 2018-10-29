@@ -17,7 +17,7 @@ Channel Participant `Bob`|0xf0f6e53d6bbb9debf35da6531ec9f1141cd549d5
 **Photon Monitoring Start**  
 Run script code below to kickstart.  
 ```sh
-photonmonitoring  --datadir=.smartraidenmonitoring --eth-rpc-endpoint ws://127.0.0.1:5555  --address="0x6b9e4d89ee3828e7a477ea9aa7b62810260e27e9" --keystore-path ~/.ethereum/keystore --registry-contract-address 0x4dc3388E72e45E99061Ec4Fe17Db2ebfe3B4341f  --password-file /home/niexin/niexin/data.txt  --smt  0xc0dfdD7821c762eF38F86225BD45ff4e912fFA20
+photonmonitoring  --datadir=.photonmonitoring --eth-rpc-endpoint ws://127.0.0.1:5555  --address="0x6b9e4d89ee3828e7a477ea9aa7b62810260e27e9" --keystore-path ~/.ethereum/keystore --registry-contract-address 0x4dc3388E72e45E99061Ec4Fe17Db2ebfe3B4341f  --password-file /home/niexin/niexin/data.txt  --smt  0xc0dfdD7821c762eF38F86225BD45ff4e912fFA20
 echo "quit ok"
 ```
 
@@ -30,7 +30,7 @@ echo "quit ok"
 - `password-file` : the path of password  
 - `smt` : the address of token  
 
-*Default port for SmartRaiden Monitoring : 6000*  
+*Default port for Photon Monitoring : 6000*  
 
 **Start-up Delegated Charge Node**
 Run script below to operate delegated charged node.  
