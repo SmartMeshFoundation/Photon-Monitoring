@@ -24,7 +24,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/p2p/nat"
-	"github.com/ethereum/go-ethereum/rpc"
 )
 
 const (
@@ -36,13 +35,11 @@ const (
 
 // DefaultConfig contains reasonable default settings.
 var DefaultConfig = Config{
-	DataDir:          DefaultDataDir(),
-	HTTPPort:         DefaultHTTPPort,
-	HTTPModules:      []string{"net", "web3"},
-	HTTPVirtualHosts: []string{"localhost"},
-	HTTPTimeouts:     rpc.DefaultHTTPTimeouts,
-	WSPort:           DefaultWSPort,
-	WSModules:        []string{"net", "web3"},
+	DataDir:     DefaultDataDir(),
+	HTTPPort:    DefaultHTTPPort,
+	HTTPModules: []string{"net", "web3"},
+	WSPort:      DefaultWSPort,
+	WSModules:   []string{"net", "web3"},
 	P2P: p2p.Config{
 		ListenAddr: ":30303",
 		MaxPeers:   25,

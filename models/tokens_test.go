@@ -5,8 +5,8 @@ import (
 	"path"
 	"testing"
 
-	"github.com/SmartMeshFoundation/SmartRaiden/log"
-	"github.com/SmartMeshFoundation/SmartRaiden/utils"
+	"github.com/SmartMeshFoundation/Photon/log"
+	"github.com/SmartMeshFoundation/Photon/utils"
 	"github.com/stretchr/testify/assert"
 )
 

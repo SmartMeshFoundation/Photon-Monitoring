@@ -3,6 +3,114 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "6Gh4L/KzQZq2TDi80/U5yU6buU0=",
+			"path": "github.com/SmartMeshFoundation/Photon/accounts",
+			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
+			"revisionTime": "2018-10-29T04:11:25Z"
+		},
+		{
+			"checksumSHA1": "PBkoAXQQ/9vzDipnBsns2T1LOzU=",
+			"path": "github.com/SmartMeshFoundation/Photon/blockchain",
+			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
+			"revisionTime": "2018-10-29T04:11:25Z"
+		},
+		{
+			"checksumSHA1": "S/orkg4EaSagJMAP0E9y4at76SA=",
+			"path": "github.com/SmartMeshFoundation/Photon/channel",
+			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
+			"revisionTime": "2018-10-29T04:11:25Z"
+		},
+		{
+			"checksumSHA1": "RnF3/KOtsCXLLle9VTuZyA6pFgU=",
+			"path": "github.com/SmartMeshFoundation/Photon/channel/channeltype",
+			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
+			"revisionTime": "2018-10-29T04:11:25Z"
+		},
+		{
+			"checksumSHA1": "d5sql8ZbGBunMTHHkBezQsqcBdg=",
+			"path": "github.com/SmartMeshFoundation/Photon/encoding",
+			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
+			"revisionTime": "2018-10-29T04:11:25Z"
+		},
+		{
+			"checksumSHA1": "vtXjsZmiboIThvBUG64QjXelECg=",
+			"path": "github.com/SmartMeshFoundation/Photon/log",
+			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
+			"revisionTime": "2018-10-29T04:11:25Z"
+		},
+		{
+			"checksumSHA1": "laX9mbbNvDDhmNiegjwMpYEVTKk=",
+			"path": "github.com/SmartMeshFoundation/Photon/network/helper",
+			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
+			"revisionTime": "2018-10-29T04:11:25Z"
+		},
+		{
+			"checksumSHA1": "zykzhbMD7BDxl6S/IybTHGdhyiQ=",
+			"path": "github.com/SmartMeshFoundation/Photon/network/netshare",
+			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
+			"revisionTime": "2018-10-29T04:11:25Z"
+		},
+		{
+			"checksumSHA1": "gnY+1L7Z4+KZ7p7r8VZxbJ/QBCM=",
+			"path": "github.com/SmartMeshFoundation/Photon/network/rpc",
+			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
+			"revisionTime": "2018-10-29T04:11:25Z"
+		},
+		{
+			"checksumSHA1": "r7AueyOnbUZ0aFY4Tr5lbPk6Q9o=",
+			"path": "github.com/SmartMeshFoundation/Photon/network/rpc/contracts",
+			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
+			"revisionTime": "2018-10-29T04:11:25Z"
+		},
+		{
+			"checksumSHA1": "qsOfnuVmZoc0nKZS7QWzUlUy+sI=",
+			"path": "github.com/SmartMeshFoundation/Photon/network/rpc/fee",
+			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
+			"revisionTime": "2018-10-29T04:11:25Z"
+		},
+		{
+			"checksumSHA1": "LQU8RBBtzY9m1VVryQLX/Gqgzkc=",
+			"path": "github.com/SmartMeshFoundation/Photon/params",
+			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
+			"revisionTime": "2018-10-29T04:11:25Z"
+		},
+		{
+			"checksumSHA1": "Apxibj5Gi9KXmvPjF/8qlrf3ASE=",
+			"path": "github.com/SmartMeshFoundation/Photon/rerr",
+			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
+			"revisionTime": "2018-10-29T04:11:25Z"
+		},
+		{
+			"checksumSHA1": "iDqI7RMjzVNxZCnlZkTPeGbv+Sw=",
+			"path": "github.com/SmartMeshFoundation/Photon/transfer",
+			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
+			"revisionTime": "2018-10-29T04:11:25Z"
+		},
+		{
+			"checksumSHA1": "YlWrUL0MPh1NP6jd+MlkdWgjv14=",
+			"path": "github.com/SmartMeshFoundation/Photon/transfer/mediatedtransfer",
+			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
+			"revisionTime": "2018-10-29T04:11:25Z"
+		},
+		{
+			"checksumSHA1": "Uea04r7A1IuRDs0hu8FskOTPs78=",
+			"path": "github.com/SmartMeshFoundation/Photon/transfer/mtree",
+			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
+			"revisionTime": "2018-10-29T04:11:25Z"
+		},
+		{
+			"checksumSHA1": "+ZoAIaTdv4Pje8xRFk+pyf4wtIE=",
+			"path": "github.com/SmartMeshFoundation/Photon/transfer/route",
+			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
+			"revisionTime": "2018-10-29T04:11:25Z"
+		},
+		{
+			"checksumSHA1": "bb5IWEgVke9aB+rGtM6T66vnV1I=",
+			"path": "github.com/SmartMeshFoundation/Photon/utils",
+			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
+			"revisionTime": "2018-10-29T04:11:25Z"
+		},
+		{
 			"checksumSHA1": "9pUYEkfhzQcqZMhLOgPKSUulWMI=",
 			"path": "github.com/SmartMeshFoundation/SmartRaiden/accounts",
 			"revision": "89d92ee5505aec27891a677035b9d7ec1570e5e3",
@@ -935,5 +1043,5 @@
 			"revisionTime": "2017-08-11T01:42:03Z"
 		}
 	],
-	"rootPath": "github.com/SmartMeshFoundation/SmartRaiden-Monitoring"
+	"rootPath": "github.com/SmartMeshFoundation/Photon-Monitoring"
 }

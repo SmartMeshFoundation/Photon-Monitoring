@@ -5,9 +5,9 @@ import (
 
 	"math/big"
 
-	"github.com/SmartMeshFoundation/SmartRaiden-Monitoring/models"
-	"github.com/SmartMeshFoundation/SmartRaiden/log"
-	"github.com/SmartMeshFoundation/SmartRaiden/utils"
+	"github.com/SmartMeshFoundation/Photon-Monitoring/models"
+	"github.com/SmartMeshFoundation/Photon/log"
+	"github.com/SmartMeshFoundation/Photon/utils"
 	"github.com/ant0ine/go-json-rest/rest"
 	"github.com/ethereum/go-ethereum/common"
 )

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/SmartMeshFoundation/SmartRaiden-Monitoring/models"
+	"github.com/SmartMeshFoundation/Photon-Monitoring/models"
 )
 
 func TestNewSmtQuery(t *testing.T) {

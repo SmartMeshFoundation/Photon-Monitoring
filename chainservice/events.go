@@ -5,7 +5,7 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/SmartMeshFoundation/SmartRaiden/transfer"
+	"github.com/SmartMeshFoundation/Photon/transfer"
 
 	"fmt"
 
@@ -17,15 +17,15 @@ import (
 
 	"encoding/binary"
 
-	"github.com/SmartMeshFoundation/SmartRaiden-Monitoring/models"
-	"github.com/SmartMeshFoundation/SmartRaiden-Monitoring/params"
-	"github.com/SmartMeshFoundation/SmartRaiden/blockchain"
-	"github.com/SmartMeshFoundation/SmartRaiden/log"
-	"github.com/SmartMeshFoundation/SmartRaiden/network/helper"
-	"github.com/SmartMeshFoundation/SmartRaiden/network/rpc"
-	smparams "github.com/SmartMeshFoundation/SmartRaiden/params"
-	"github.com/SmartMeshFoundation/SmartRaiden/transfer/mediatedtransfer"
-	"github.com/SmartMeshFoundation/SmartRaiden/utils"
+	"github.com/SmartMeshFoundation/Photon-Monitoring/models"
+	"github.com/SmartMeshFoundation/Photon-Monitoring/params"
+	"github.com/SmartMeshFoundation/Photon/blockchain"
+	"github.com/SmartMeshFoundation/Photon/log"
+	"github.com/SmartMeshFoundation/Photon/network/helper"
+	"github.com/SmartMeshFoundation/Photon/network/rpc"
+	smparams "github.com/SmartMeshFoundation/Photon/params"
+	"github.com/SmartMeshFoundation/Photon/transfer/mediatedtransfer"
+	"github.com/SmartMeshFoundation/Photon/utils"
 	"github.com/asdine/storm"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -42,7 +42,6 @@ type ChainEvents struct {
 	key             *ecdsa.PrivateKey
 	db              *models.ModelDB
 	quitChan        chan struct{}
-	alarm           *blockchain.AlarmTask
 	stopped         bool
 	BlockNumberChan chan int64
 	blockNumber     *atomic.Value
@@ -70,7 +69,6 @@ func NewChainEvents(key *ecdsa.PrivateKey, client *helper.SafeEthClient, tokenNe
 		key:             key,
 		db:              db,
 		quitChan:        make(chan struct{}),
-		alarm:           blockchain.NewAlarmTask(client),
 		BlockNumberChan: make(chan int64, 1),
 		blockNumber:     new(atomic.Value),
 	}
@@ -78,30 +76,13 @@ func NewChainEvents(key *ecdsa.PrivateKey, client *helper.SafeEthClient, tokenNe
 
 //Start moniter blockchain
 func (ce *ChainEvents) Start() error {
-	err := ce.alarm.Start()
-	if err != nil {
-		return err
-	}
-	go func() {
-		for {
-			select {
-			case blockNumber := <-ce.alarm.LastBlockNumberChan:
-				ce.db.SaveLatestBlockNumber(blockNumber)
-				ce.setBlockNumber(blockNumber)
-			}
-		}
-	}()
-	err = ce.be.Start(ce.db.GetLatestBlockNumber())
-	if err != nil {
-		log.Error(fmt.Sprintf("blockchain events start err %s", err))
-	}
+	ce.be.Start(ce.db.GetLatestBlockNumber())
 	go ce.loop()
 	return nil
 }
 
 //Stop service
 func (ce *ChainEvents) Stop() {
-	ce.alarm.Stop()
 	ce.be.Stop()
 	close(ce.quitChan)
 }
@@ -122,12 +103,6 @@ func (ce *ChainEvents) loop() {
 				return
 			}
 			ce.handleStateChange(st)
-		case n, ok := <-ce.BlockNumberChan:
-			if !ok {
-				log.Info("BlockNumberChan closed")
-				return
-			}
-			ce.handleBlockNumber(n)
 		case <-ce.quitChan:
 			return
 		}
@@ -281,6 +256,8 @@ func (ce *ChainEvents) handleTokenAddedStateChange(st *mediatedtransfer.Contract
 */
 func (ce *ChainEvents) handleStateChange(st transfer.StateChange) {
 	switch st2 := st.(type) {
+	case *transfer.BlockStateChange:
+		ce.handleBlockNumber(st2.BlockNumber)
 	case *mediatedtransfer.ContractClosedStateChange:
 		//处理 channel 关闭事件
 		ce.handleClosedStateChange(st2)

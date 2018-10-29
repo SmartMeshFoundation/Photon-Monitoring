@@ -28,8 +28,8 @@ var SmtAddress common.Address
 //APIPort listening request from app
 var APIPort = 6000
 
-//RaidenURL for cantact with raiden
-var RaidenURL = "http://127.0.0.1:5001/api/1/queryreceivedtransfer"
+//PhotonURL for cantact with photon
+var PhotonURL = "http://127.0.0.1:5001/api/1/queryreceivedtransfer"
 
 //RegistryAddress chain events where comes from
 var RegistryAddress = common.HexToAddress("0xd66d3719E89358e0790636b8586b539467EDa596")
@@ -59,11 +59,11 @@ func DefaultDataDir() string {
 	home := homeDir()
 	if home != "" {
 		if runtime.GOOS == "darwin" {
-			return filepath.Join(home, "Library", "smartraidenmonitoring")
+			return filepath.Join(home, "Library", "smartPhotonmonitoring")
 		} else if runtime.GOOS == "windows" {
-			return filepath.Join(home, "AppData", "Roaming", "smartraidenmonitoring")
+			return filepath.Join(home, "AppData", "Roaming", "photonmonitoring")
 		} else {
-			return filepath.Join(home, ".smartraidenmonitoring")
+			return filepath.Join(home, ".photonmonitoring")
 		}
 	}
 	// As we cannot guess a stable location, return empty and handle later

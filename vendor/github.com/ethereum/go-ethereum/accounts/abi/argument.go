@@ -111,15 +111,18 @@ func (arguments Arguments) unpackTuple(v interface{}, marshalledValues []interfa
 	if err := requireUnpackKind(value, typ, kind, arguments); err != nil {
 		return err
 	}
-
-	// If the interface is a struct, get of abi->struct_field mapping
-
-	var abi2struct map[string]string
+	// If the output interface is a struct, make sure names don't collide
 	if kind == reflect.Struct {
-		var err error
-		abi2struct, err = mapAbiToStructFields(arguments, value)
-		if err != nil {
-			return err
+		exists := make(map[string]bool)
+		for _, arg := range arguments {
+			field := capitalise(arg.Name)
+			if field == "" {
+				return fmt.Errorf("abi: purely underscored output cannot unpack to struct")
+			}
+			if exists[field] {
+				return fmt.Errorf("abi: multiple outputs mapping to the same struct field '%s'", field)
+			}
+			exists[field] = true
 		}
 	}
 	for i, arg := range arguments.NonIndexed() {
@@ -128,9 +131,13 @@ func (arguments Arguments) unpackTuple(v interface{}, marshalledValues []interfa
 
 		switch kind {
 		case reflect.Struct:
-			if structField, ok := abi2struct[arg.Name]; ok {
-				if err := set(value.FieldByName(structField), reflectValue, arg); err != nil {
-					return err
+			name := capitalise(arg.Name)
+			for j := 0; j < typ.NumField(); j++ {
+				// TODO read tags: `abi:"fieldName"`
+				if typ.Field(j).Name == name {
+					if err := set(value.Field(j), reflectValue, arg); err != nil {
+						return err
+					}
 				}
 			}
 		case reflect.Slice, reflect.Array:
@@ -157,41 +164,9 @@ func (arguments Arguments) unpackAtomic(v interface{}, marshalledValues []interf
 	if len(marshalledValues) != 1 {
 		return fmt.Errorf("abi: wrong length, expected single value, got %d", len(marshalledValues))
 	}
-
 	elem := reflect.ValueOf(v).Elem()
-	kind := elem.Kind()
 	reflectValue := reflect.ValueOf(marshalledValues[0])
-
-	var abi2struct map[string]string
-	if kind == reflect.Struct {
-		var err error
-		if abi2struct, err = mapAbiToStructFields(arguments, elem); err != nil {
-			return err
-		}
-		arg := arguments.NonIndexed()[0]
-		if structField, ok := abi2struct[arg.Name]; ok {
-			return set(elem.FieldByName(structField), reflectValue, arg)
-		}
-		return nil
-	}
-
 	return set(elem, reflectValue, arguments.NonIndexed()[0])
-
-}
-
-// Computes the full size of an array;
-// i.e. counting nested arrays, which count towards size for unpacking.
-func getArraySize(arr *Type) int {
-	size := arr.Size
-	// Arrays can be nested, with each element being the same size
-	arr = arr.Elem
-	for arr.T == ArrayTy {
-		// Keep multiplying by elem.Size while the elem is an array.
-		size *= arr.Size
-		arr = arr.Elem
-	}
-	// Now we have the full array size, including its children.
-	return size
 }
 
 // UnpackValues can be used to unpack ABI-encoded hexdata according to the ABI-specification,
@@ -206,14 +181,9 @@ func (arguments Arguments) UnpackValues(data []byte) ([]interface{}, error) {
 			// If we have a static array, like [3]uint256, these are coded as
 			// just like uint256,uint256,uint256.
 			// This means that we need to add two 'virtual' arguments when
-			// we count the index from now on.
-			//
-			// Array values nested multiple levels deep are also encoded inline:
-			// [2][3]uint256: uint256,uint256,uint256,uint256,uint256,uint256
-			//
-			// Calculate the full array size to get the correct offset for the next argument.
-			// Decrement it by 1, as the normal index increment is still applied.
-			virtualArgs += getArraySize(&arg.Type) - 1
+			// we count the index from now on
+
+			virtualArgs += arg.Type.Size - 1
 		}
 		if err != nil {
 			return nil, err
@@ -277,8 +247,7 @@ func (arguments Arguments) Pack(args ...interface{}) ([]byte, error) {
 	return ret, nil
 }
 
-// capitalise makes the first character of a string upper case, also removing any
-// prefixing underscores from the variable names.
+// capitalise makes a camel-case string which starts with an upper case character.
 func capitalise(input string) string {
 	for len(input) > 0 && input[0] == '_' {
 		input = input[1:]
@@ -286,5 +255,29 @@ func capitalise(input string) string {
 	if len(input) == 0 {
 		return ""
 	}
-	return strings.ToUpper(input[:1]) + input[1:]
+	return toCamelCase(strings.ToUpper(input[:1]) + input[1:])
+}
+
+// toCamelCase converts an under-score string to a camel-case string
+func toCamelCase(input string) string {
+	toupper := false
+
+	result := ""
+	for k, v := range input {
+		switch {
+		case k == 0:
+			result = strings.ToUpper(string(input[0]))
+
+		case toupper:
+			result += strings.ToUpper(string(v))
+			toupper = false
+
+		case v == '_':
+			toupper = true
+
+		default:
+			result += string(v)
+		}
+	}
+	return result
 }
