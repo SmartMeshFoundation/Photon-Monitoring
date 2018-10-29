@@ -1,7 +1,7 @@
 package verifier
 
 import (
-	"github.com/SmartMeshFoundation/SmartRaiden-Monitoring/models"
+	"github.com/SmartMeshFoundation/Photon-Monitoring/models"
 	"github.com/ethereum/go-ethereum/common"
 )
 

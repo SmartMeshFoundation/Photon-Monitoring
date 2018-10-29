@@ -11,7 +11,7 @@ import (
 
 	"encoding/gob"
 
-	"github.com/SmartMeshFoundation/SmartRaiden/log"
+	"github.com/SmartMeshFoundation/Photon/log"
 	"github.com/asdine/storm"
 	gobcodec "github.com/asdine/storm/codec/gob"
 	bolt "github.com/coreos/bbolt"

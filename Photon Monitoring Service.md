@@ -1,8 +1,8 @@
 # Photon Monitoring Service
-Photon Monitoring Service, as PM, primarily focuses on mobile platforms. As user's mobile devides disconnected from Photon, they would be automatically execute `UpdateTransfer` and `Punish` according to delegation, to secure user's assets.  
+Photon Monitoring Service, as SM, primarily focuses on mobile platforms. As user's mobile devides disconnected from Photon, they would be automatically execute `UpdateTransfer` and `Punish` according to delegation, to secure user's assets.  
 
 ## How to make a use of Photon Monitoring Service ?
-Well, how to use this PM service ? In-depth Tutorials will be presented below.   
+Well, how to use this SM service ? In-depth Tutorials will be presented below.   
 
 ## Environment Construction
 A complete workflow of a Photon Monitoring Service, at least three nodes and a Photon Monitoring Service are required.  
@@ -17,7 +17,7 @@ Channel Participant `Bob`|0xf0f6e53d6bbb9debf35da6531ec9f1141cd549d5
 **Photon Monitoring Start**  
 Run script code below to kickstart.  
 ```sh
-photonmonitoring  --datadir=.photonmonitoring --eth-rpc-endpoint ws://127.0.0.1:5555  --address="0x6b9e4d89ee3828e7a477ea9aa7b62810260e27e9" --keystore-path ~/.ethereum/keystore --registry-contract-address 0x4dc3388E72e45E99061Ec4Fe17Db2ebfe3B4341f  --password-file /home/niexin/niexin/data.txt  --smt  0xc0dfdD7821c762eF38F86225BD45ff4e912fFA20
+Photonmonitoring  --datadir=.Photonmonitoring --eth-rpc-endpoint ws://127.0.0.1:5555  --address="0x6b9e4d89ee3828e7a477ea9aa7b62810260e27e9" --keystore-path ~/.ethereum/keystore --registry-contract-address 0x4dc3388E72e45E99061Ec4Fe17Db2ebfe3B4341f  --password-file /home/niexin/niexin/data.txt  --smt  0xc0dfdD7821c762eF38F86225BD45ff4e912fFA20
 echo "quit ok"
 ```
 
@@ -35,12 +35,12 @@ echo "quit ok"
 **Start-up Delegated Charge Node**
 Run script below to operate delegated charged node.  
 ```sh
-echo run photon...
-photon --datadir=.photon --api-address=0.0.0.0:5001 --listen-address=127.0.0.1:40011 --address="0x69c5621db8093ee9a26cc2e253f929316e6e5b92" --keystore-path ~/.ethereum/keystore --registry-contract-address 0x4dc3388E72e45E99061Ec4Fe17Db2ebfe3B4341f  --password-file 123  --eth-rpc-endpoint ws://127.0.0.1:5555  --ignore-mediatednode-request   
+echo run Photon...
+Photon --datadir=.Photon --api-address=0.0.0.0:5001 --listen-address=127.0.0.1:40011 --address="0x69c5621db8093ee9a26cc2e253f929316e6e5b92" --keystore-path ~/.ethereum/keystore --registry-contract-address 0x4dc3388E72e45E99061Ec4Fe17Db2ebfe3B4341f  --password-file 123  --eth-rpc-endpoint ws://127.0.0.1:5555  --ignore-mediatednode-request   
 echo "quit ok"
 ```
 
-*`ignore-mediatednode-request` must be added when start delegated charge node, in case it works as a mediated node of photon and make mistakes at fee-charging.*  
+*`ignore-mediatednode-request` must be added when start delegated charge node, in case it works as a mediated node of Photon and make mistakes at fee-charging.*  
 
 **Run Channel Participant Nodes:**  
 Same as Start-up Delegated Charge Node, you can run codes below to achieve that.  
@@ -48,15 +48,15 @@ Same as Start-up Delegated Charge Node, you can run codes below to achieve that.
 **Alice:**      
 ```sh
 echo privnet
-echo run photon...
-photon --datadir=.photon --api-address=0.0.0.0:5002 --listen-address=127.0.0.1:40002 --address="0x31ddac67e610c22d19e887fb1937bee3079b56cd" --keystore-path ~/.ethereum/keystore --registry-contract-address 0x4dc3388E72e45E99061Ec4Fe17Db2ebfe3B4341f --password-file 123  --eth-rpc-endpoint ws://127.0.0.1:5555  
+echo run Photon...
+Photon --datadir=.Photon --api-address=0.0.0.0:5002 --listen-address=127.0.0.1:40002 --address="0x31ddac67e610c22d19e887fb1937bee3079b56cd" --keystore-path ~/.ethereum/keystore --registry-contract-address 0x4dc3388E72e45E99061Ec4Fe17Db2ebfe3B4341f --password-file 123  --eth-rpc-endpoint ws://127.0.0.1:5555  
 echo "quit ok"
 ```
 **Bob:**    
 ```sh
 echo privnet
-echo run photon...
-photon --datadir=.photon --api-address=0.0.0.0:5003 --listen-address=127.0.0.1:40003 --address="0xf0f6e53d6bbb9debf35da6531ec9f1141cd549d5" --keystore-path ~/.ethereum/keystore  --registry-contract-address 0x4dc3388E72e45E99061Ec4Fe17Db2ebfe3B4341f --password-file 123  --eth-rpc-endpoint ws://127.0.0.1:5555 
+echo run Photon...
+Photon --datadir=.Photon --api-address=0.0.0.0:5003 --listen-address=127.0.0.1:40003 --address="0xf0f6e53d6bbb9debf35da6531ec9f1141cd549d5" --keystore-path ~/.ethereum/keystore  --registry-contract-address 0x4dc3388E72e45E99061Ec4Fe17Db2ebfe3B4341f --password-file 123  --eth-rpc-endpoint ws://127.0.0.1:5555 
 echo "quit ok"
 ```
 Till now, you've completed works for environment construction and nodes have been started. Let me take you to next steps to see how they actually work.  
@@ -68,7 +68,7 @@ There is a payment channel between Alice and Bob. For some specific reasons, in 
 
 This is exactly what our Photon Monitoring Service need to do.   
 
-When Bob realizes that he's going to get off from network, he can delegate Photon Monitoring to update `BalanceProof` . Once Bob does disconnect from Photon, the PM node will update `BalanceProof` on behalf of Bob to retrieve the deserved token from the channel.  
+When Bob realizes that he's going to get off from network, he can delegate Photon Monitoring to update `BalanceProof` . Once Bob does disconnect from Photon, the SM node will update `BalanceProof` on behalf of Bob to retrieve the deserved token from the channel.  
 
 There are other cases,such as, a channel participant is a fraudulent actor and attempts to steal tokens from this channel. If he unlocks a abandon transfer which he has declared to dispose, then Our Photon provides `punish` feature to prevent this case to happen and fraudulent actors will be punished. The Photon Monitoring also provides`punish` services.Latter we will give you an invidual showcase for this.  
 
@@ -130,7 +130,7 @@ There are other cases,such as, a channel participant is a fraudulent actor and a
 - `Available` - available balance  
 -  `NeedSmt` - fees SM node need to pay  
 
-If our delegator has no sufficient fund deposited in Delegated charge node, then he needs to make enough deposit, just  normal photon transfers. In our case, Bob deposits/transfers 20 tokens into Delegated charge node.
+If our delegator has no sufficient fund deposited in Delegated charge node, then he needs to make enough deposit, just  normal Photon transfers. In our case, Bob deposits/transfers 20 tokens into Delegated charge node.
 
 **Example Request :**    
 `POST http://127.0.0.1:5003/api/1/transfers/0xc0dfdD7821c762eF38F86225BD45ff4e912fFA20/0x69C5621db8093ee9a26cc2e253f929316E6E5b92`    
@@ -176,7 +176,7 @@ Bob gets disconnected from Internet. If Bob has used Photon Delegation Service, 
  Alice  close the payment channel.  
 
 #### 7. Photon Monitoring Service waits till half past settletimeout, then update BalanceProof on behalf of delegator.
-After our delegator disconnected, if Alice has closed the payment channel, PM Service will monitor the closing events and wait half past the settletimeout, then it will update `BalanceProof` on behalf of the delegator. In this phase, we can query delegation status via API below.  
+After our delegator disconnected, if Alice has closed the payment channel, SM Service will monitor the closing events and wait half past the settletimeout, then it will update `BalanceProof` on behalf of the delegator. In this phase, we can query delegation status via API below.  
 
 **Via API below :**      
 `GET /tx/<delegater_address>/<channel_address>`    

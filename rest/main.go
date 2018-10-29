@@ -5,11 +5,11 @@ import (
 
 	"fmt"
 
-	"github.com/SmartMeshFoundation/SmartRaiden/log"
+	"github.com/SmartMeshFoundation/Photon/log"
 
-	"github.com/SmartMeshFoundation/SmartRaiden-Monitoring/models"
-	"github.com/SmartMeshFoundation/SmartRaiden-Monitoring/params"
-	"github.com/SmartMeshFoundation/SmartRaiden-Monitoring/verifier"
+	"github.com/SmartMeshFoundation/Photon-Monitoring/models"
+	"github.com/SmartMeshFoundation/Photon-Monitoring/params"
+	"github.com/SmartMeshFoundation/Photon-Monitoring/verifier"
 	"github.com/ant0ine/go-json-rest/rest"
 )
 
