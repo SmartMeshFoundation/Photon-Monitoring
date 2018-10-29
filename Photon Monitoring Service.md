@@ -1,8 +1,8 @@
 # Photon Monitoring Service
-Photon Monitoring Service, as SM, primarily focuses on mobile platforms. As user's mobile devides disconnected from Photon, they would be automatically execute `UpdateTransfer` and `Punish` according to delegation, to secure user's assets.  
+Photon Monitoring Service, as PM, primarily focuses on mobile platforms. As user's mobile devides disconnected from Photon, they would be automatically execute `UpdateTransfer` and `Punish` according to delegation, to secure user's assets.  
 
 ## How to make a use of Photon Monitoring Service ?
-Well, how to use this SM service ? In-depth Tutorials will be presented below.   
+Well, how to use this PM service ? In-depth Tutorials will be presented below.   
 
 ## Environment Construction
 A complete workflow of a Photon Monitoring Service, at least three nodes and a Photon Monitoring Service are required.  
@@ -68,7 +68,7 @@ There is a payment channel between Alice and Bob. For some specific reasons, in 
 
 This is exactly what our Photon Monitoring Service need to do.   
 
-When Bob realizes that he's going to get off from network, he can delegate Photon Monitoring to update `BalanceProof` . Once Bob does disconnect from Photon, the SM node will update `BalanceProof` on behalf of Bob to retrieve the deserved token from the channel.  
+When Bob realizes that he's going to get off from network, he can delegate Photon Monitoring to update `BalanceProof` . Once Bob does disconnect from Photon, the PM node will update `BalanceProof` on behalf of Bob to retrieve the deserved token from the channel.  
 
 There are other cases,such as, a channel participant is a fraudulent actor and attempts to steal tokens from this channel. If he unlocks a abandon transfer which he has declared to dispose, then Our Photon provides `punish` feature to prevent this case to happen and fraudulent actors will be punished. The Photon Monitoring also provides`punish` services.Latter we will give you an invidual showcase for this.  
 
@@ -128,7 +128,7 @@ There are other cases,such as, a channel participant is a fraudulent actor and a
 }
 ```
 - `Available` - available balance  
--  `NeedSmt` - fees SM node need to pay  
+-  `NeedSmt` - fees PM node need to pay  
 
 If our delegator has no sufficient fund deposited in Delegated charge node, then he needs to make enough deposit, just  normal Photon transfers. In our case, Bob deposits/transfers 20 tokens into Delegated charge node.
 
@@ -176,7 +176,7 @@ Bob gets disconnected from Internet. If Bob has used Photon Delegation Service, 
  Alice  close the payment channel.  
 
 #### 7. Photon Monitoring Service waits till half past settletimeout, then update BalanceProof on behalf of delegator.
-After our delegator disconnected, if Alice has closed the payment channel, SM Service will monitor the closing events and wait half past the settletimeout, then it will update `BalanceProof` on behalf of the delegator. In this phase, we can query delegation status via API below.  
+After our delegator disconnected, if Alice has closed the payment channel, PM Service will monitor the closing events and wait half past the settletimeout, then it will update `BalanceProof` on behalf of the delegator. In this phase, we can query delegation status via API below.  
 
 **Via API below :**      
 `GET /tx/<delegater_address>/<channel_address>`    
