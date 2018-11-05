@@ -48,10 +48,13 @@ func makeSlice(ptr unsafe.Pointer, size uint) []byte {
 	return *(*[]byte)(unsafe.Pointer(&sl))
 }
 
+
+
 // opWrapper provides a JavaScript wrapper around OpCode.
 type opWrapper struct {
 	op vm.OpCode
 }
+
 
 // memoryWrapper provides a JavaScript wrapper around vm.Memory.
 type memoryWrapper struct {
@@ -80,6 +83,7 @@ func (mw *memoryWrapper) getUint(addr int64) *big.Int {
 	return new(big.Int).SetBytes(mw.memory.GetPtr(addr, 32))
 }
 
+
 // stackWrapper provides a JavaScript wrapper around vm.Stack.
 type stackWrapper struct {
 	stack *vm.Stack
@@ -96,6 +100,7 @@ func (sw *stackWrapper) peek(idx int) *big.Int {
 	return sw.stack.Data()[len(sw.stack.Data())-idx-1]
 }
 
+
 // dbWrapper provides a JavaScript wrapper around vm.Database.
 type dbWrapper struct {
 	db vm.StateDB
@@ -105,6 +110,7 @@ type dbWrapper struct {
 type contractWrapper struct {
 	contract *vm.Contract
 }
+
 
 // Tracer provides an implementation of Tracer that evaluates a Javascript
 // function for each VM execution step.
@@ -166,7 +172,7 @@ func (jst *Tracer) Stop(err error) {
 // call executes a method on a JS object, catching any errors, formatting and
 // returning them as error objects.
 func (jst *Tracer) call(method string, args ...string) (json.RawMessage, error) {
-	return nil, nil
+	return nil,nil
 }
 
 func wrapError(context string, err error) error {

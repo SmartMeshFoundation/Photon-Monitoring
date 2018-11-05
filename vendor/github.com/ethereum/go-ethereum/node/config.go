@@ -32,8 +32,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/p2p"
-	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/p2p/discover"
 )
 
 const (
@@ -120,10 +119,6 @@ type Config struct {
 	// exposed.
 	HTTPModules []string `toml:",omitempty"`
 
-	// HTTPTimeouts allows for customization of the timeout values used by the HTTP RPC
-	// interface.
-	HTTPTimeouts rpc.HTTPTimeouts
-
 	// WSHost is the host interface on which to start the websocket RPC server. If
 	// this field is empty, no websocket API endpoint will be started.
 	WSHost string `toml:",omitempty"`
@@ -184,7 +179,7 @@ func (c *Config) NodeDB() string {
 	if c.DataDir == "" {
 		return "" // ephemeral
 	}
-	return c.ResolvePath(datadirNodeDatabase)
+	return c.resolvePath(datadirNodeDatabase)
 }
 
 // DefaultIPCEndpoint returns the IPC path used by default.
@@ -214,7 +209,7 @@ func DefaultHTTPEndpoint() string {
 	return config.HTTPEndpoint()
 }
 
-// WSEndpoint resolves a websocket endpoint based on the configured host interface
+// WSEndpoint resolves an websocket endpoint based on the configured host interface
 // and port parameters.
 func (c *Config) WSEndpoint() string {
 	if c.WSHost == "" {
@@ -267,8 +262,8 @@ var isOldGethResource = map[string]bool{
 	"trusted-nodes.json": true,
 }
 
-// ResolvePath resolves path in the instance directory.
-func (c *Config) ResolvePath(path string) string {
+// resolvePath resolves path in the instance directory.
+func (c *Config) resolvePath(path string) string {
 	if filepath.IsAbs(path) {
 		return path
 	}
@@ -314,7 +309,7 @@ func (c *Config) NodeKey() *ecdsa.PrivateKey {
 		return key
 	}
 
-	keyfile := c.ResolvePath(datadirPrivateKey)
+	keyfile := c.resolvePath(datadirPrivateKey)
 	if key, err := crypto.LoadECDSA(keyfile); err == nil {
 		return key
 	}
@@ -336,18 +331,18 @@ func (c *Config) NodeKey() *ecdsa.PrivateKey {
 }
 
 // StaticNodes returns a list of node enode URLs configured as static nodes.
-func (c *Config) StaticNodes() []*enode.Node {
-	return c.parsePersistentNodes(c.ResolvePath(datadirStaticNodes))
+func (c *Config) StaticNodes() []*discover.Node {
+	return c.parsePersistentNodes(c.resolvePath(datadirStaticNodes))
 }
 
 // TrustedNodes returns a list of node enode URLs configured as trusted nodes.
-func (c *Config) TrustedNodes() []*enode.Node {
-	return c.parsePersistentNodes(c.ResolvePath(datadirTrustedNodes))
+func (c *Config) TrustedNodes() []*discover.Node {
+	return c.parsePersistentNodes(c.resolvePath(datadirTrustedNodes))
 }
 
 // parsePersistentNodes parses a list of discovery node URLs loaded from a .json
 // file from within the data directory.
-func (c *Config) parsePersistentNodes(path string) []*enode.Node {
+func (c *Config) parsePersistentNodes(path string) []*discover.Node {
 	// Short circuit if no node config is present
 	if c.DataDir == "" {
 		return nil
@@ -362,12 +357,12 @@ func (c *Config) parsePersistentNodes(path string) []*enode.Node {
 		return nil
 	}
 	// Interpret the list as a discovery node array
-	var nodes []*enode.Node
+	var nodes []*discover.Node
 	for _, url := range nodelist {
 		if url == "" {
 			continue
 		}
-		node, err := enode.ParseV4(url)
+		node, err := discover.ParseNode(url)
 		if err != nil {
 			log.Error(fmt.Sprintf("Node URL %s: %v\n", url, err))
 			continue

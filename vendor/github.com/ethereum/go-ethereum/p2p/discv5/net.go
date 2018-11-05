@@ -36,6 +36,7 @@ import (
 var (
 	errInvalidEvent = errors.New("invalid in current state")
 	errNoQuery      = errors.New("no pending query")
+	errWrongAddress = errors.New("unknown sender address")
 )
 
 const (
@@ -678,7 +679,7 @@ func (net *Network) refresh(done chan<- struct{}) {
 	}
 	if len(seeds) == 0 {
 		log.Trace("no seed nodes found")
-		time.AfterFunc(time.Second*10, func() { close(done) })
+		close(done)
 		return
 	}
 	for _, n := range seeds {
@@ -827,10 +828,11 @@ type nodeEvent uint
 //go:generate stringer -type=nodeEvent
 
 const (
+	invalidEvent nodeEvent = iota // zero is reserved
 
 	// Packet type events.
 	// These correspond to packet types in the UDP protocol.
-	pingPacket = iota + 1
+	pingPacket
 	pongPacket
 	findnodePacket
 	neighborsPacket
@@ -1228,7 +1230,7 @@ func (net *Network) checkTopicRegister(data *topicRegister) (*pong, error) {
 	if rlpHash(data.Topics) != pongpkt.data.(*pong).TopicHash {
 		return nil, errors.New("topic hash mismatch")
 	}
-	if data.Idx >= uint(len(data.Topics)) {
+	if data.Idx < 0 || int(data.Idx) >= len(data.Topics) {
 		return nil, errors.New("topic index out of range")
 	}
 	return pongpkt.data.(*pong), nil

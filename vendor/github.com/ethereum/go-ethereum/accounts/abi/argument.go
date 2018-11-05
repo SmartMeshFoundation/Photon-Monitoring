@@ -257,7 +257,6 @@ func capitalise(input string) string {
 	}
 	return toCamelCase(strings.ToUpper(input[:1]) + input[1:])
 }
-
 // toCamelCase converts an under-score string to a camel-case string
 func toCamelCase(input string) string {
 	toupper := false
