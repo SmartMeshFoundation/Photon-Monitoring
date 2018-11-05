@@ -42,11 +42,6 @@ func init() {
 
 }
 
-func panicOnNullValue() {
-	var c []int
-	c[0] = 0
-}
-
 //StartMain entry point of Photon app
 func StartMain() {
 	fmt.Printf("os.args=%q\n", os.Args)
