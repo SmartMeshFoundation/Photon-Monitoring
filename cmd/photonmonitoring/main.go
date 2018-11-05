@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/big"
+	"strings"
 
 	"github.com/SmartMeshFoundation/Photon/accounts"
 
@@ -100,6 +101,11 @@ func StartMain() {
 			Name:  "update-transfer-fee",
 			Usage: "fee for update transfer Transaction ",
 			Value: "3000000000000000000",
+		},
+		cli.StringFlag{
+			Name:  "photon-url",
+			Usage: "query charging fee photon node",
+			Value: params.PhotonURL,
 		},
 	}
 	app.Flags = append(app.Flags, debug.Flags...)
@@ -230,4 +236,10 @@ func config(ctx *cli.Context) {
 	log.Info(fmt.Sprintf("unlockfee=%s,punishfee=%s,updatetransferfee=%s,smtaddress=%s",
 		params.SmtUnlock, params.SmtPunish, params.SmtUpdateTransfer, params.SmtAddress.String(),
 	))
+	url := ctx.String("photon-url")
+	if len(url) <= 0 || strings.Index(url, "http://") != 0 {
+		log.Error(fmt.Sprintf("photon-url must be a valid url path,for example %s", params.PhotonURL))
+		utils.SystemExit(1)
+	}
+	params.PhotonURL = url
 }

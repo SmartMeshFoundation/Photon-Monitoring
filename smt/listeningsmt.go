@@ -11,7 +11,7 @@ import (
 
 	"github.com/SmartMeshFoundation/Photon-Monitoring/models"
 	"github.com/SmartMeshFoundation/Photon-Monitoring/params"
-	"github.com/labstack/gommon/log"
+	"github.com/SmartMeshFoundation/Photon/log"
 )
 
 //Query monitor receiving smt
