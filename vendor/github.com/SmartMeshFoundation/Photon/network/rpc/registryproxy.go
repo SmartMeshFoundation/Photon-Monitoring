@@ -24,6 +24,10 @@ type RegistryProxy struct {
 // @param token_address The address of the given token
 // @return Address of tokenNetwork
 func (r *RegistryProxy) TokenNetworkByToken(tokenAddress common.Address) (tokenNetworkAddress common.Address, err error) {
+	if r.registry == nil {
+		err = errors.New("registry does't init")
+		return
+	}
 	tokenNetworkAddress, err = r.registry.TokenToTokenNetworks(r.bcs.getQueryOpts(), tokenAddress)
 	if tokenNetworkAddress == utils.EmptyAddress {
 		err = rerr.ErrNoTokenManager
@@ -36,8 +40,21 @@ func (r *RegistryProxy) GetContract() *contracts.TokenNetworkRegistry {
 	return r.registry
 }
 
+// GetContractVersion :
+func (r *RegistryProxy) GetContractVersion() (contractVersion string, err error) {
+	if r.registry == nil {
+		err = errors.New("registry does't init")
+		return
+	}
+	return r.registry.ContractVersion(r.bcs.getQueryOpts())
+}
+
 //AddToken register a new token,this token must be a valid erc20
 func (r *RegistryProxy) AddToken(tokenAddress common.Address) (tokenNetworkAddress common.Address, err error) {
+	if r.registry == nil {
+		err = errors.New("registry does't init")
+		return
+	}
 	tx, err := r.registry.CreateERC20TokenNetwork(r.bcs.Auth, tokenAddress)
 	if err != nil {
 		return

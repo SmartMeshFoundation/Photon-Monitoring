@@ -3,112 +3,124 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "6Gh4L/KzQZq2TDi80/U5yU6buU0=",
+			"checksumSHA1": "7+rmwlffpV1fdmTJFWZ0jp8l0zM=",
 			"path": "github.com/SmartMeshFoundation/Photon/accounts",
-			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
-			"revisionTime": "2018-10-29T04:11:25Z"
+			"revision": "d745e60c029e8014d62e10e317c0c8153a0ff188",
+			"revisionTime": "2018-11-08T01:59:33Z"
 		},
 		{
-			"checksumSHA1": "PBkoAXQQ/9vzDipnBsns2T1LOzU=",
+			"checksumSHA1": "UMX0SAVx6PvKyYT9eSSk4pMq5gY=",
 			"path": "github.com/SmartMeshFoundation/Photon/blockchain",
-			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
-			"revisionTime": "2018-10-29T04:11:25Z"
+			"revision": "d745e60c029e8014d62e10e317c0c8153a0ff188",
+			"revisionTime": "2018-11-08T01:59:33Z"
 		},
 		{
-			"checksumSHA1": "S/orkg4EaSagJMAP0E9y4at76SA=",
+			"checksumSHA1": "fuDEx+A2vGKNxKk4j+d3A8AqVtQ=",
 			"path": "github.com/SmartMeshFoundation/Photon/channel",
-			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
-			"revisionTime": "2018-10-29T04:11:25Z"
+			"revision": "d745e60c029e8014d62e10e317c0c8153a0ff188",
+			"revisionTime": "2018-11-08T01:59:33Z"
 		},
 		{
 			"checksumSHA1": "RnF3/KOtsCXLLle9VTuZyA6pFgU=",
 			"path": "github.com/SmartMeshFoundation/Photon/channel/channeltype",
-			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
-			"revisionTime": "2018-10-29T04:11:25Z"
+			"revision": "d745e60c029e8014d62e10e317c0c8153a0ff188",
+			"revisionTime": "2018-11-08T01:59:33Z"
 		},
 		{
 			"checksumSHA1": "d5sql8ZbGBunMTHHkBezQsqcBdg=",
 			"path": "github.com/SmartMeshFoundation/Photon/encoding",
-			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
-			"revisionTime": "2018-10-29T04:11:25Z"
+			"revision": "d745e60c029e8014d62e10e317c0c8153a0ff188",
+			"revisionTime": "2018-11-08T01:59:33Z"
 		},
 		{
-			"checksumSHA1": "vtXjsZmiboIThvBUG64QjXelECg=",
+			"checksumSHA1": "ouIUdbYnl9CbIeCzP9vnnx9j1SU=",
 			"path": "github.com/SmartMeshFoundation/Photon/log",
-			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
-			"revisionTime": "2018-10-29T04:11:25Z"
+			"revision": "d745e60c029e8014d62e10e317c0c8153a0ff188",
+			"revisionTime": "2018-11-08T01:59:33Z"
 		},
 		{
-			"checksumSHA1": "laX9mbbNvDDhmNiegjwMpYEVTKk=",
+			"checksumSHA1": "uyaxVYrW+Tqp8c7gE0w/f5u0aE0=",
+			"path": "github.com/SmartMeshFoundation/Photon/log/term",
+			"revision": "d745e60c029e8014d62e10e317c0c8153a0ff188",
+			"revisionTime": "2018-11-08T01:59:33Z"
+		},
+		{
+			"checksumSHA1": "eAb3HzT9kB03isGVPoVGVqMestA=",
+			"path": "github.com/SmartMeshFoundation/Photon/network/gomatrix",
+			"revision": "d745e60c029e8014d62e10e317c0c8153a0ff188",
+			"revisionTime": "2018-11-08T01:59:33Z"
+		},
+		{
+			"checksumSHA1": "abOqnzwEUO/o4AC7ZUp/obhqY7o=",
 			"path": "github.com/SmartMeshFoundation/Photon/network/helper",
-			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
-			"revisionTime": "2018-10-29T04:11:25Z"
+			"revision": "d745e60c029e8014d62e10e317c0c8153a0ff188",
+			"revisionTime": "2018-11-08T01:59:33Z"
 		},
 		{
 			"checksumSHA1": "zykzhbMD7BDxl6S/IybTHGdhyiQ=",
 			"path": "github.com/SmartMeshFoundation/Photon/network/netshare",
-			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
-			"revisionTime": "2018-10-29T04:11:25Z"
+			"revision": "d745e60c029e8014d62e10e317c0c8153a0ff188",
+			"revisionTime": "2018-11-08T01:59:33Z"
 		},
 		{
-			"checksumSHA1": "gnY+1L7Z4+KZ7p7r8VZxbJ/QBCM=",
+			"checksumSHA1": "tOXUb1jymQkMlsUaBnCNV8elBmw=",
 			"path": "github.com/SmartMeshFoundation/Photon/network/rpc",
-			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
-			"revisionTime": "2018-10-29T04:11:25Z"
+			"revision": "d745e60c029e8014d62e10e317c0c8153a0ff188",
+			"revisionTime": "2018-11-08T01:59:33Z"
 		},
 		{
-			"checksumSHA1": "r7AueyOnbUZ0aFY4Tr5lbPk6Q9o=",
+			"checksumSHA1": "6YNtKFP51lnwp81uXvwgWPhzxUQ=",
 			"path": "github.com/SmartMeshFoundation/Photon/network/rpc/contracts",
-			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
-			"revisionTime": "2018-10-29T04:11:25Z"
+			"revision": "d745e60c029e8014d62e10e317c0c8153a0ff188",
+			"revisionTime": "2018-11-08T01:59:33Z"
 		},
 		{
 			"checksumSHA1": "qsOfnuVmZoc0nKZS7QWzUlUy+sI=",
 			"path": "github.com/SmartMeshFoundation/Photon/network/rpc/fee",
-			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
-			"revisionTime": "2018-10-29T04:11:25Z"
+			"revision": "d745e60c029e8014d62e10e317c0c8153a0ff188",
+			"revisionTime": "2018-11-08T01:59:33Z"
 		},
 		{
-			"checksumSHA1": "LQU8RBBtzY9m1VVryQLX/Gqgzkc=",
+			"checksumSHA1": "wHRg/TiISihQszUCETXPGrCB+VE=",
 			"path": "github.com/SmartMeshFoundation/Photon/params",
-			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
-			"revisionTime": "2018-10-29T04:11:25Z"
+			"revision": "d745e60c029e8014d62e10e317c0c8153a0ff188",
+			"revisionTime": "2018-11-08T01:59:33Z"
 		},
 		{
 			"checksumSHA1": "Apxibj5Gi9KXmvPjF/8qlrf3ASE=",
 			"path": "github.com/SmartMeshFoundation/Photon/rerr",
-			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
-			"revisionTime": "2018-10-29T04:11:25Z"
+			"revision": "d745e60c029e8014d62e10e317c0c8153a0ff188",
+			"revisionTime": "2018-11-08T01:59:33Z"
 		},
 		{
 			"checksumSHA1": "iDqI7RMjzVNxZCnlZkTPeGbv+Sw=",
 			"path": "github.com/SmartMeshFoundation/Photon/transfer",
-			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
-			"revisionTime": "2018-10-29T04:11:25Z"
+			"revision": "d745e60c029e8014d62e10e317c0c8153a0ff188",
+			"revisionTime": "2018-11-08T01:59:33Z"
 		},
 		{
 			"checksumSHA1": "YlWrUL0MPh1NP6jd+MlkdWgjv14=",
 			"path": "github.com/SmartMeshFoundation/Photon/transfer/mediatedtransfer",
-			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
-			"revisionTime": "2018-10-29T04:11:25Z"
+			"revision": "d745e60c029e8014d62e10e317c0c8153a0ff188",
+			"revisionTime": "2018-11-08T01:59:33Z"
 		},
 		{
 			"checksumSHA1": "Uea04r7A1IuRDs0hu8FskOTPs78=",
 			"path": "github.com/SmartMeshFoundation/Photon/transfer/mtree",
-			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
-			"revisionTime": "2018-10-29T04:11:25Z"
+			"revision": "d745e60c029e8014d62e10e317c0c8153a0ff188",
+			"revisionTime": "2018-11-08T01:59:33Z"
 		},
 		{
-			"checksumSHA1": "+ZoAIaTdv4Pje8xRFk+pyf4wtIE=",
+			"checksumSHA1": "wPPTpp1grrOT/o2PkzjbCfGxO5I=",
 			"path": "github.com/SmartMeshFoundation/Photon/transfer/route",
-			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
-			"revisionTime": "2018-10-29T04:11:25Z"
+			"revision": "d745e60c029e8014d62e10e317c0c8153a0ff188",
+			"revisionTime": "2018-11-08T01:59:33Z"
 		},
 		{
 			"checksumSHA1": "bb5IWEgVke9aB+rGtM6T66vnV1I=",
 			"path": "github.com/SmartMeshFoundation/Photon/utils",
-			"revision": "355faef719046c1ca8170286e1db09ee2b366631",
-			"revisionTime": "2018-10-29T04:11:25Z"
+			"revision": "d745e60c029e8014d62e10e317c0c8153a0ff188",
+			"revisionTime": "2018-11-08T01:59:33Z"
 		},
 		{
 			"checksumSHA1": "KMTpIQS+cdSCzMN5TC6GfNLTv0o=",

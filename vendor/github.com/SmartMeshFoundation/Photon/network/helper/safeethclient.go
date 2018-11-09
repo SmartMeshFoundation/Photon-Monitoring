@@ -10,6 +10,7 @@ import (
 
 	"time"
 
+	"github.com/SmartMeshFoundation/Photon/log"
 	"github.com/SmartMeshFoundation/Photon/network/netshare"
 	"github.com/SmartMeshFoundation/Photon/params"
 	"github.com/SmartMeshFoundation/Photon/utils"
@@ -17,7 +18,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/fatedier/frp/src/utils/log"
 )
 
 var errNotConnectd = errors.New("eth not connected")
@@ -79,7 +79,7 @@ func (c *SafeEthClient) RegisterReConnectNotify(name string) <-chan struct{} {
 	return ch
 }
 func (c *SafeEthClient) changeStatus(newStatus netshare.Status) {
-	log.Info("ethclient connection status changed from %d to %d", c.Status, newStatus)
+	log.Info(fmt.Sprintf("ethclient connection status changed from %d to %d", c.Status, newStatus))
 	c.Status = newStatus
 	select {
 	case c.StatusChan <- c.Status:

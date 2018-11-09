@@ -40,7 +40,7 @@ NewChannel returns the living channel.
 channelIdentifier must be a valid contract adress
 settleTimeout must be valid, it cannot too small.
 */
-func NewChannel(ourState, partenerState *EndState, externState *ExternalState, tokenAddr common.Address, channelIdentifier *contracts.ChannelUniqueID,
+func NewChannel(ourState, partnerState *EndState, externState *ExternalState, tokenAddr common.Address, channelIdentifier *contracts.ChannelUniqueID,
 	revealTimeout, settleTimeout int) (c *Channel, err error) {
 	if settleTimeout <= revealTimeout {
 		err = fmt.Errorf("reveal_timeout can not be larger-or-equal to settle_timeout, reveal_timeout=%d,settle_timeout=%d", revealTimeout, settleTimeout)
@@ -52,7 +52,7 @@ func NewChannel(ourState, partenerState *EndState, externState *ExternalState, t
 	}
 	c = &Channel{
 		OurState:          ourState,
-		PartnerState:      partenerState,
+		PartnerState:      partnerState,
 		ExternState:       externState,
 		ChannelIdentifier: *channelIdentifier,
 		TokenAddress:      tokenAddr,
