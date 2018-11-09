@@ -1,6 +1,7 @@
 module github.com/SmartMeshFoundation/Photon-Monitoring
 
 replace (
+	github.com/SmartMeshFoundation/Photon v0.9.3 => github.com/nkbai/Photon v0.0.0-20181109014810-8489022f7401
 	github.com/ethereum/go-ethereum v1.8.17 => github.com/nkbai/go-ethereum v1.9.1
 	github.com/mattn/go-xmpp v0.0.1 => github.com/nkbai/go-xmpp v0.0.1
 	golang.org/x/crypto v0.0.1 => github.com/golang/crypto v0.0.0-20181106171534-e4dc69e5b2fd

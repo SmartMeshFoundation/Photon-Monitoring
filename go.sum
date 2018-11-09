@@ -150,6 +150,8 @@ github.com/nats-io/go-nats v1.6.0/go.mod h1:+t7RHT5ApZebkrQdnn6AhQJmhJJiKAvJUio1
 github.com/nats-io/go-nats-streaming v0.4.0/go.mod h1:gfq4R3c9sKAINOpelo0gn/b9QDMBZnmrttcsNF+lqyo=
 github.com/nats-io/nats-streaming-server v0.11.2/go.mod h1:RyqtDJZvMZO66YmyjIYdIvS69zu/wDAkyNWa8PIUa5c=
 github.com/nats-io/nuid v1.0.0/go.mod h1:19wcPz3Ph3q0Jbyiqsd0kePYG7A95tJPxeL+1OSON2c=
+github.com/nkbai/Photon v0.0.0-20181109014810-8489022f7401 h1:MQ3X91pPo9kjSgQl1j4sDU477/MiIxrf4iogtT8ir7k=
+github.com/nkbai/Photon v0.0.0-20181109014810-8489022f7401/go.mod h1:Bocros/ZqjOkkOLadb8R2jccWKtaKkh6YhIiGzRudiU=
 github.com/nkbai/go-ethereum v1.9.1 h1:yrxqNJjyyqAXn5TbB4tG4Zgl05REuATbbuxWJlctN2s=
 github.com/nkbai/go-ethereum v1.9.1/go.mod h1:RcHewgFRvrdigLzwXLH42jWNhqjlsLgKCCqM+2HvuuU=
 github.com/nkbai/go-xmpp v0.0.1/go.mod h1:iawu0fs95xdsqcwFWTz2HCtyDgYp83ofwx0gJnWWYE0=
