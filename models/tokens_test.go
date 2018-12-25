@@ -17,7 +17,7 @@ func init() {
 var dbPath string
 
 func setupDb(t *testing.T) (model *ModelDB) {
-	dbPath = path.Join(os.TempDir(), "testxxxx.db")
+	dbPath = path.Join(os.TempDir(), "test.db")
 	os.Remove(dbPath)
 	os.Remove(dbPath + ".lock")
 	model, err := OpenDb(dbPath)
