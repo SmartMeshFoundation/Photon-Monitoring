@@ -58,13 +58,9 @@ func NewChainEvents(key *ecdsa.PrivateKey, client *helper.SafeEthClient, tokenNe
 	if registry == nil {
 		panic("startup error : cannot get registry")
 	}
-	token2TokenNetworks, err := db.GetAllTokens()
-	if err != nil {
-		panic(err)
-	}
 	return &ChainEvents{
 		client:          client,
-		be:              blockchain.NewBlockChainEvents(client, bcs, token2TokenNetworks),
+		be:              blockchain.NewBlockChainEvents(client, bcs),
 		bcs:             bcs,
 		key:             key,
 		db:              db,
@@ -125,12 +121,12 @@ func (ce *ChainEvents) handleClosedStateChange(st2 *mediatedtransfer.ContractClo
 			return
 		}
 	} else {
-		tokenNetwork, err := ce.bcs.TokenNetwork(st2.TokenNetworkAddress)
+		tokenNetwork, err := ce.bcs.TokenNetwork(ds[0].TokenAddress)
 		if err != nil {
-			log.Error(fmt.Sprintf("recevied close event ,but toke network %s not exist", st2.TokenNetworkAddress.String()))
+			log.Error(fmt.Sprintf("create token network  error for token %s", ds[0].TokenAddress.String()))
 			return
 		}
-		_, settleBlockNumber, _, _, settleTimeout, err := tokenNetwork.GetContract().GetChannelInfoByChannelIdentifier(nil, st2.ChannelIdentifier)
+		settleBlockNumber, _, _, settleTimeout, err := tokenNetwork.GetContract().GetChannelInfoByChannelIdentifier(nil, st2.ChannelIdentifier)
 		if err != nil {
 			log.Error(fmt.Sprintf("channel %s get settle timeout err %s", st2.ChannelIdentifier.String(), err))
 			return
@@ -238,7 +234,7 @@ func (ce *ChainEvents) handleWithdrawStateChange(st2 *mediatedtransfer.ContractC
 无法从连上直接获取当前注册了哪些token,只能按照事件检索.
 */
 func (ce *ChainEvents) handleTokenAddedStateChange(st *mediatedtransfer.ContractTokenAddedStateChange) {
-	err := ce.db.AddToken(st.TokenAddress, st.TokenNetworkAddress)
+	err := ce.db.AddToken(st.TokenAddress, utils.EmptyAddress)
 	if err != nil {
 		log.Error(fmt.Sprintf("handleTokenAddedStateChange err=%s, st=%s", err, utils.StringInterface1(st)))
 	}
@@ -351,7 +347,7 @@ func (ce *ChainEvents) updateTransfer(d *models.Delegate) {
 		ce.db.DelegateSave(d)
 		hasErr := false
 		for _, w := range d.Content.Unlocks {
-			err := ce.doUnlock(w, d.PartnerAddress, d.Address, d.TokenNetworkAddress, common.BytesToHash(d.ChannelIdentifier), d.Content.UpdateTransfer.TransferAmount)
+			err := ce.doUnlock(w, d.PartnerAddress, d.Address, d.TokenAddress, common.BytesToHash(d.ChannelIdentifier), d.Content.UpdateTransfer.TransferAmount)
 			if err != nil {
 				log.Error(fmt.Sprintf("doUnlock %s %s err %s", d.Key, w.Secret, err))
 				hasErr = true
@@ -425,7 +421,7 @@ func (ce *ChainEvents) doUpdateTransfer(d *models.Delegate) error {
 	channelAddr := common.BytesToHash(d.ChannelIdentifier)
 	log.Info(fmt.Sprintf("UpdateTransfer %s called ,updateTransfer=%s",
 		d.ChannelIdentifier, utils.StringInterface(d.Content.UpdateTransfer, 3)))
-	tokenNetwork, err := ce.bcs.TokenNetwork(d.TokenNetworkAddress)
+	tokenNetwork, err := ce.bcs.TokenNetwork(d.TokenAddress)
 	if err != nil {
 		return err
 	}
@@ -433,7 +429,7 @@ func (ce *ChainEvents) doUpdateTransfer(d *models.Delegate) error {
 	closingSignatur := u.ClosingSignature
 	nonClosingSignature := u.NonClosingSignature
 	log.Trace(fmt.Sprintf("signer=%s, updateTransfer=%s", utils.APex(ce.bcs.Auth.From), utils.StringInterface(&u, 4)))
-	tx, err := tokenNetwork.GetContract().UpdateBalanceProofDelegate(ce.bcs.Auth, d.PartnerAddress, d.Address, u.TransferAmount, u.Locksroot, uint64(u.Nonce), u.ExtraHash, closingSignatur, nonClosingSignature)
+	tx, err := tokenNetwork.GetContract().UpdateBalanceProofDelegate(ce.bcs.Auth, d.TokenAddress, d.PartnerAddress, d.Address, u.TransferAmount, u.Locksroot, uint64(u.Nonce), u.ExtraHash, closingSignatur, nonClosingSignature)
 	if err != nil {
 		return err
 	}
@@ -451,9 +447,9 @@ func (ce *ChainEvents) doUpdateTransfer(d *models.Delegate) error {
 	return nil
 
 }
-func (ce *ChainEvents) doUnlock(w *models.Unlock, participant, partner, tokenNetworkAddress common.Address, channelAddr common.Hash, transferAmount *big.Int) error {
+func (ce *ChainEvents) doUnlock(w *models.Unlock, participant, partner, tokenAddress common.Address, channelAddr common.Hash, transferAmount *big.Int) error {
 	log.Info(fmt.Sprintf("unlock %s on %s for %s", w.Secret, utils.HPex(channelAddr), utils.APex(participant)))
-	tokenNetwork, err := ce.bcs.TokenNetwork(tokenNetworkAddress)
+	tokenNetwork, err := ce.bcs.TokenNetwork(tokenAddress)
 	if err != nil {
 		return err
 	}
@@ -461,7 +457,7 @@ func (ce *ChainEvents) doUnlock(w *models.Unlock, participant, partner, tokenNet
 	if lock.Expiration <= ce.GetBlockNumber() {
 		return fmt.Errorf("lock has expired, expration=%d,currentBlockNumber=%d", lock.Expiration, ce.GetBlockNumber())
 	}
-	tx, err := tokenNetwork.GetContract().UnlockDelegate(ce.bcs.Auth, partner, participant, transferAmount, big.NewInt(lock.Expiration), lock.Amount, lock.LockSecretHash, w.MerkleProof, w.Signature)
+	tx, err := tokenNetwork.GetContract().UnlockDelegate(ce.bcs.Auth, tokenAddress, partner, participant, transferAmount, big.NewInt(lock.Expiration), lock.Amount, lock.LockSecretHash, w.MerkleProof, w.Signature)
 	if err != nil {
 		return fmt.Errorf("withdraw failed %s on channel %s,lock=%s", err, utils.HPex(channelAddr), utils.StringInterface(lock, 3))
 	}
@@ -479,11 +475,11 @@ func (ce *ChainEvents) doUnlock(w *models.Unlock, participant, partner, tokenNet
 
 func (ce *ChainEvents) doPunish(p *models.Punish, d *models.Delegate) error {
 	log.Info(fmt.Sprintf("punish %s on lockhash %s for channel %s", d.PartnerAddress, p.LockHash.String(), utils.BPex(d.ChannelIdentifier)))
-	tokenNetwork, err := ce.bcs.TokenNetwork(d.TokenNetworkAddress)
+	tokenNetwork, err := ce.bcs.TokenNetwork(d.TokenAddress)
 	if err != nil {
 		return err
 	}
-	tx, err := tokenNetwork.GetContract().PunishObsoleteUnlock(ce.bcs.Auth, d.Address, d.PartnerAddress, p.LockHash, p.AdditionalHash, p.Signature)
+	tx, err := tokenNetwork.GetContract().PunishObsoleteUnlock(ce.bcs.Auth, d.TokenAddress, d.Address, d.PartnerAddress, p.LockHash, p.AdditionalHash, p.Signature)
 	if err != nil {
 		return fmt.Errorf("punish faied %s,on channel %s,lockhash=%s", err, utils.BPex(d.ChannelIdentifier), p.LockHash.String())
 	}

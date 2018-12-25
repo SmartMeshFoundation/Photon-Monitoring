@@ -49,21 +49,21 @@ const (
 
 //Delegate is from app's request and it's tx result
 type Delegate struct {
-	Key                 []byte         `storm:"id"`
-	Address             common.Address //delegator
-	PartnerAddress      common.Address
-	ChannelIdentifier   []byte `storm:"index"` //委托 channel
-	OpenBlockNumber     int64  // open block number of this channel
-	SettleBlockNumber   int64  // closed block number+settle_timeout
-	TokenNetworkAddress common.Address
-	Time                time.Time //委托时间
-	TxTime              time.Time //执行时间
-	TxBlockNumber       int64     //执行开始块
-	MinBlockNumber      int64     //Tx最早开始块
-	MaxBlockNumber      int64     //Tx 最晚开始块
-	Status              int       `storm:"index"`
-	Error               string
-	Content             *ChannelFor3rd
+	Key               []byte         `storm:"id"`
+	Address           common.Address //delegator
+	PartnerAddress    common.Address
+	ChannelIdentifier []byte `storm:"index"` //委托 channel
+	OpenBlockNumber   int64  // open block number of this channel
+	SettleBlockNumber int64  // closed block number+settle_timeout
+	TokenAddress      common.Address
+	Time              time.Time //委托时间
+	TxTime            time.Time //执行时间
+	TxBlockNumber     int64     //执行开始块
+	MinBlockNumber    int64     //Tx最早开始块
+	MaxBlockNumber    int64     //Tx 最晚开始块
+	Status            int       `storm:"index"`
+	Error             string
+	Content           *ChannelFor3rd
 }
 
 //RemovedDelegate represents a finished delegate, when a channel is settled? or withdrawed?
@@ -98,13 +98,13 @@ type Unlock struct {
 
 //ChannelFor3rd is for 3rd party to call update transfer
 type ChannelFor3rd struct {
-	ChannelIdentifier  common.Hash    `json:"channel_identifier"`
-	OpenBlockNumber    int64          `json:"open_block_number"`
-	TokenNetworkAddrss common.Address `json:"token_network_address"`
-	PartnerAddress     common.Address `json:"partner_address"`
-	UpdateTransfer     UpdateTransfer `json:"update_transfer"`
-	Unlocks            []*Unlock      `json:"unlocks"`
-	Punishes           []*Punish      `json:"punishes"`
+	ChannelIdentifier common.Hash    `json:"channel_identifier"`
+	OpenBlockNumber   int64          `json:"open_block_number"`
+	TokenAddress      common.Address `json:"token_address"`
+	PartnerAddress    common.Address `json:"partner_address"`
+	UpdateTransfer    UpdateTransfer `json:"update_transfer"`
+	Unlocks           []*Unlock      `json:"unlocks"`
+	Punishes          []*Punish      `json:"punishes"`
 }
 
 //Punish 需要委托给第三方的 punish证据
@@ -161,7 +161,7 @@ func (model *ModelDB) DelegateNewOrUpdateDelegate(c *ChannelFor3rd, addr common.
 	d.OpenBlockNumber = c.OpenBlockNumber
 	d.Address = addr
 	d.Content = c
-	d.TokenNetworkAddress = c.TokenNetworkAddrss
+	d.TokenAddress = c.TokenAddress
 	d.PartnerAddress = c.PartnerAddress
 
 	model.lock.Lock()
