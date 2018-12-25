@@ -4,7 +4,7 @@ package gomatrix
 type Room struct {
 	ID    string
 	Alias string
-	State map[string]map[string]*Event
+	State map[string]map[string]*Event //eventType->StateKey->Event
 }
 
 // UpdateState updates the room's current state with the given Event. This will clobber events based
@@ -14,7 +14,12 @@ func (room Room) UpdateState(event *Event) {
 	if !exists {
 		room.State[event.Type] = make(map[string]*Event)
 	}
-	room.State[event.Type][*event.StateKey] = event
+	if event.StateKey == nil {
+		//log.Trace(fmt.Sprintf("receive event has no statekey event=%s", utils.StringInterface(event, 3)))
+	} else {
+		room.State[event.Type][*event.StateKey] = event
+	}
+
 }
 
 // GetStateEvent returns the state event for the given type/state_key combo, or nil.

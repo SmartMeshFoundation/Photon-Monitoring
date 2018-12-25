@@ -86,16 +86,29 @@ func HttpHandler(path string, fmtr Format) Handler {
 	return FuncHandler(func(r *Record) error {
 		go func() {
 			data := fmtr.Format(r)
-			http.Post(path, "application/json", bytes.NewBuffer(data))
-			//fmt.Printf("httphandler err=%s\n", err)
+			r, err := http.Post(path, "application/json", bytes.NewBuffer(data))
+			if err != nil {
+				//fmt.Printf("httphandler err=%s\n", err)
+			} else {
+				err = r.Body.Close()
+				if err != nil {
+					//fmt.Printf("httphandler close err =%s ", err)
+				}
+			}
+
 		}()
 
 		return nil
 	})
 }
-func TeeHandler(fastHandler, slowHandler Handler) Handler {
+func TeeHandler(fastHandler, slowHandler1 Handler, slowHandler2 Handler) Handler {
 	return FuncHandler(func(r *Record) error {
-		go slowHandler.Log(r)
+		if slowHandler1 != nil {
+			go slowHandler1.Log(r)
+		}
+		if slowHandler2 != nil {
+			go slowHandler2.Log(r)
+		}
 		return fastHandler.Log(r)
 	})
 }

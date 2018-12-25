@@ -1,6 +1,7 @@
 package blockchain
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 
@@ -21,20 +22,14 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	ethrpc "github.com/ethereum/go-ethereum/rpc"
 )
 
 var secretRegistryAbi abi.ABI
-var tokenNetworkRegistryAbi abi.ABI
 var tokenNetworkAbi abi.ABI
 var topicToEventName map[common.Hash]string
 
 func init() {
 	var err error
-	tokenNetworkRegistryAbi, err = abi.JSON(strings.NewReader(contracts.TokenNetworkRegistryABI))
-	if err != nil {
-		panic(fmt.Sprintf("tokenNetworkRegistryAbi parse err %s", err))
-	}
 	secretRegistryAbi, err = abi.JSON(strings.NewReader(contracts.SecretRegistryABI))
 	if err != nil {
 		panic(fmt.Sprintf("secretRegistryAbi parse err %s", err))
@@ -44,9 +39,8 @@ func init() {
 		panic(fmt.Sprintf("tokenNetworkAbi parse err %s", err))
 	}
 	topicToEventName = make(map[common.Hash]string)
-	topicToEventName[tokenNetworkRegistryAbi.Events[params.NameTokenNetworkCreated].Id()] = params.NameTokenNetworkCreated
+	topicToEventName[tokenNetworkAbi.Events[params.NameTokenNetworkCreated].Id()] = params.NameTokenNetworkCreated
 	topicToEventName[secretRegistryAbi.Events[params.NameSecretRevealed].Id()] = params.NameSecretRevealed
-	topicToEventName[tokenNetworkAbi.Events[params.NameChannelOpened].Id()] = params.NameChannelOpened
 	topicToEventName[tokenNetworkAbi.Events[params.NameChannelOpenedAndDeposit].Id()] = params.NameChannelOpenedAndDeposit
 	topicToEventName[tokenNetworkAbi.Events[params.NameChannelNewDeposit].Id()] = params.NameChannelNewDeposit
 	topicToEventName[tokenNetworkAbi.Events[params.NameChannelWithdraw].Id()] = params.NameChannelWithdraw
@@ -63,9 +57,7 @@ func init() {
 Events handles all contract events from blockchain
 */
 type Events struct {
-	StateChangeChannel chan transfer.StateChange
-
-	tokenNetworks       map[common.Address]bool
+	StateChangeChannel  chan transfer.StateChange
 	lastBlockNumber     int64
 	rpcModuleDependency RPCModuleDependency
 	client              *helper.SafeEthClient
@@ -75,19 +67,12 @@ type Events struct {
 }
 
 //NewBlockChainEvents create BlockChainEvents
-func NewBlockChainEvents(client *helper.SafeEthClient, rpcModuleDependency RPCModuleDependency,
-	token2TokenNetwork map[common.Address]common.Address) *Events {
+func NewBlockChainEvents(client *helper.SafeEthClient, rpcModuleDependency RPCModuleDependency) *Events {
 	be := &Events{
 		StateChangeChannel:  make(chan transfer.StateChange, 10),
-		tokenNetworks:       make(map[common.Address]bool),
 		rpcModuleDependency: rpcModuleDependency,
 		client:              client,
 		txDone:              make(map[common.Hash]uint64),
-	}
-	if token2TokenNetwork != nil {
-		for _, tn := range token2TokenNetwork {
-			be.tokenNetworks[tn] = true
-		}
 	}
 	return be
 }
@@ -161,7 +146,8 @@ func (be *Events) startAlarmTask() {
 		}
 		cancelFunc()
 		lastedBlock := h.Number.Int64()
-		if currentBlock == lastedBlock {
+		// 这里如果出现切换公链导致获取到的新块比当前块更小的话,只需要等待即可
+		if currentBlock >= lastedBlock {
 			if startUpBlockNumber == lastedBlock {
 				// 当启动时获取不到新块,也需要通知photonService,否则会导致api无法启动
 				log.Warn(fmt.Sprintf("photon start with blockNumber %d,but lastedBlockNumber on chain also %d", startUpBlockNumber, lastedBlock))
@@ -192,6 +178,7 @@ func (be *Events) startAlarmTask() {
 		if err != nil {
 			log.Error(fmt.Sprintf("queryAllStateChange err=%s", err))
 			// 如果这里出现err,不能继续处理该blocknumber,否则会丢事件,直接从该块重新处理即可
+			time.Sleep(be.pollPeriod / 2)
 			continue
 		}
 		if len(stateChanges) > 0 {
@@ -252,35 +239,10 @@ func (be *Events) getLogsFromChain(fromBlock int64, toBlock int64) (logs []types
 		be.rpcModuleDependency.GetRegistryAddress(),
 		be.rpcModuleDependency.GetSecretRegistryAddress(),
 	}
-	for tokenNetworkAddress := range be.tokenNetworks {
-		contractAddresses = append(contractAddresses, tokenNetworkAddress)
-	}
 	logs, err = rpc.EventsGetInternal(
-		rpc.GetQueryConext(), contractAddresses, ethrpc.BlockNumber(fromBlock), ethrpc.BlockNumber(toBlock), be.client)
+		rpc.GetQueryConext(), contractAddresses, fromBlock, toBlock, be.client)
 	if err != nil {
 		return
-	}
-	var newTokenNetworks []common.Address
-	for _, l := range logs {
-		if topicToEventName[l.Topics[0]] == params.NameTokenNetworkCreated {
-			e, err2 := newEventTokenNetworkCreated(&l)
-			if err = err2; err != nil {
-				return
-			}
-			newTokenNetworks = append(newTokenNetworks, e.TokenNetworkAddress)
-		}
-	}
-	if len(newTokenNetworks) > 0 {
-		for _, tokenNetworkAddress := range newTokenNetworks {
-			be.tokenNetworks[tokenNetworkAddress] = true
-		}
-		var newLogs []types.Log
-		newLogs, err = rpc.EventsGetInternal(
-			rpc.GetQueryConext(), newTokenNetworks, ethrpc.BlockNumber(fromBlock), ethrpc.BlockNumber(toBlock), be.client)
-		if err != nil {
-			return
-		}
-		logs = append(logs, newLogs...)
 	}
 	return
 }
@@ -326,12 +288,6 @@ func (be *Events) parseLogsToEvents(logs []types.Log) (stateChanges []mediatedtr
 				return
 			}
 			stateChanges = append(stateChanges, eventSecretRevealed2StateChange(e))
-		case params.NameChannelOpened:
-			e, err2 := newEventChannelOpen(&l)
-			if err = err2; err != nil {
-				return
-			}
-			stateChanges = append(stateChanges, eventChannelOpen2StateChange(e))
 		case params.NameChannelOpenedAndDeposit:
 			e, err2 := newEventChannelOpenAndDeposit(&l)
 			if err = err2; err != nil {
@@ -389,7 +345,7 @@ func (be *Events) parseLogsToEvents(logs []types.Log) (stateChanges []mediatedtr
 			}
 			stateChanges = append(stateChanges, eventChannelWithdraw2StateChange(e))
 		default:
-			log.Warn(fmt.Sprintf("receive unkonwn type event from chain : \n%s\n", utils.StringInterface(l,3)))
+			log.Warn(fmt.Sprintf("receive unkonwn type event from chain : \n%s\n", utils.StringInterface(l, 3)))
 		}
 		// 记录处理流水
 		be.txDone[l.TxHash] = l.BlockNumber
@@ -399,9 +355,8 @@ func (be *Events) parseLogsToEvents(logs []types.Log) (stateChanges []mediatedtr
 
 func needConfirm(eventName string) bool {
 
-	if eventName == params.NameChannelOpened ||
-		eventName == params.NameChannelOpenedAndDeposit ||
-		eventName == params.NameNewDeposit ||
+	if eventName == params.NameChannelOpenedAndDeposit ||
+		eventName == params.NameChannelNewDeposit ||
 		eventName == params.NameChannelWithdraw {
 		return true
 	}
@@ -411,28 +366,25 @@ func needConfirm(eventName string) bool {
 //eventChannelSettled2StateChange to stateChange
 func eventChannelSettled2StateChange(ev *contracts.TokenNetworkChannelSettled) *mediatedtransfer.ContractSettledStateChange {
 	return &mediatedtransfer.ContractSettledStateChange{
-		ChannelIdentifier:   common.Hash(ev.ChannelIdentifier),
-		TokenNetworkAddress: ev.Raw.Address,
-		SettledBlock:        int64(ev.Raw.BlockNumber),
+		ChannelIdentifier: common.Hash(ev.ChannelIdentifier),
+		SettledBlock:      int64(ev.Raw.BlockNumber),
 	}
 }
 
 //eventChannelCooperativeSettled2StateChange to stateChange
 func eventChannelCooperativeSettled2StateChange(ev *contracts.TokenNetworkChannelCooperativeSettled) *mediatedtransfer.ContractCooperativeSettledStateChange {
 	return &mediatedtransfer.ContractCooperativeSettledStateChange{
-		ChannelIdentifier:   common.Hash(ev.ChannelIdentifier),
-		TokenNetworkAddress: ev.Raw.Address,
-		SettledBlock:        int64(ev.Raw.BlockNumber),
+		ChannelIdentifier: common.Hash(ev.ChannelIdentifier),
+		SettledBlock:      int64(ev.Raw.BlockNumber),
 	}
 }
 
 //eventChannelPunished2StateChange to stateChange
 func eventChannelPunished2StateChange(ev *contracts.TokenNetworkChannelPunished) *mediatedtransfer.ContractPunishedStateChange {
 	return &mediatedtransfer.ContractPunishedStateChange{
-		ChannelIdentifier:   common.Hash(ev.ChannelIdentifier),
-		TokenNetworkAddress: ev.Raw.Address,
-		Beneficiary:         ev.Beneficiary,
-		BlockNumber:         int64(ev.Raw.BlockNumber),
+		ChannelIdentifier: common.Hash(ev.ChannelIdentifier),
+		Beneficiary:       ev.Beneficiary,
+		BlockNumber:       int64(ev.Raw.BlockNumber),
 	}
 }
 
@@ -444,7 +396,6 @@ func eventChannelWithdraw2StateChange(ev *contracts.TokenNetworkChannelWithdraw)
 			ChannelIdentifier: common.Hash(ev.ChannelIdentifier),
 			OpenBlockNumber:   int64(ev.Raw.BlockNumber),
 		},
-		TokenNetworkAddress: ev.Raw.Address,
 		Participant1:        ev.Participant1,
 		Participant2:        ev.Participant2,
 		Participant1Balance: ev.Participant1Balance,
@@ -461,49 +412,43 @@ func eventChannelWithdraw2StateChange(ev *contracts.TokenNetworkChannelWithdraw)
 }
 
 //eventTokenNetworkCreated2StateChange to statechange
-func eventTokenNetworkCreated2StateChange(ev *contracts.TokenNetworkRegistryTokenNetworkCreated) *mediatedtransfer.ContractTokenAddedStateChange {
+func eventTokenNetworkCreated2StateChange(ev *contracts.TokenNetworkTokenNetworkCreated) *mediatedtransfer.ContractTokenAddedStateChange {
 	return &mediatedtransfer.ContractTokenAddedStateChange{
-		RegistryAddress:     ev.Raw.Address,
-		TokenAddress:        ev.TokenAddress,
-		TokenNetworkAddress: ev.TokenNetworkAddress,
-		BlockNumber:         int64(ev.Raw.BlockNumber),
+		TokenAddress: ev.TokenAddress,
+		BlockNumber:  int64(ev.Raw.BlockNumber),
 	}
 }
 
-//eventChannelOpen2StateChange to statechange
-func eventChannelOpen2StateChange(ev *contracts.TokenNetworkChannelOpened) *mediatedtransfer.ContractNewChannelStateChange {
-	return &mediatedtransfer.ContractNewChannelStateChange{
-		ChannelIdentifier: &contracts.ChannelUniqueID{
-			ChannelIdentifier: ev.ChannelIdentifier,
-			OpenBlockNumber:   int64(ev.Raw.BlockNumber),
-		},
-		TokenNetworkAddress: ev.Raw.Address,
-		Participant1:        ev.Participant1,
-		Participant2:        ev.Participant2,
-		SettleTimeout:       int(ev.SettleTimeout),
-		BlockNumber:         int64(ev.Raw.BlockNumber),
+//注意与合约上计算方式保持完全一致.
+func calcChannelID(token, p1, p2 common.Address) common.Hash {
+	var channelID common.Hash
+	//log.Trace(fmt.Sprintf("p1=%s,p2=%s,tokennetwork=%s", p1.String(), p2.String(), tokenNetwork.String()))
+	if bytes.Compare(p1[:], p2[:]) < 0 {
+		channelID = utils.Sha3(p1[:], p2[:], token[:])
+	} else {
+		channelID = utils.Sha3(p2[:], p1[:], token[:])
 	}
+	return channelID
 }
 
 //eventChannelOpenAndDeposit2StateChange to statechange
 func eventChannelOpenAndDeposit2StateChange(ev *contracts.TokenNetworkChannelOpenedAndDeposit) (ch1 *mediatedtransfer.ContractNewChannelStateChange, ch2 *mediatedtransfer.ContractBalanceStateChange) {
 	ch1 = &mediatedtransfer.ContractNewChannelStateChange{
 		ChannelIdentifier: &contracts.ChannelUniqueID{
-			ChannelIdentifier: ev.ChannelIdentifier,
+			ChannelIdentifier: calcChannelID(ev.Token, ev.Participant, ev.Partner),
 			OpenBlockNumber:   int64(ev.Raw.BlockNumber),
 		},
-		TokenNetworkAddress: ev.Raw.Address,
-		Participant1:        ev.Participant1,
-		Participant2:        ev.Participant2,
-		SettleTimeout:       int(ev.SettleTimeout),
-		BlockNumber:         int64(ev.Raw.BlockNumber),
+		Participant1:  ev.Participant,
+		Participant2:  ev.Partner,
+		SettleTimeout: int(ev.SettleTimeout),
+		BlockNumber:   int64(ev.Raw.BlockNumber),
+		TokenAddress:  ev.Token,
 	}
 	ch2 = &mediatedtransfer.ContractBalanceStateChange{
-		ChannelIdentifier:   ev.ChannelIdentifier,
-		ParticipantAddress:  ev.Participant1,
-		BlockNumber:         int64(ev.Raw.BlockNumber),
-		Balance:             ev.Participant1Deposit,
-		TokenNetworkAddress: ev.Raw.Address,
+		ChannelIdentifier:  ch1.ChannelIdentifier.ChannelIdentifier,
+		ParticipantAddress: ev.Participant,
+		BlockNumber:        int64(ev.Raw.BlockNumber),
+		Balance:            ev.Participant1Deposit,
 	}
 	return
 }
@@ -511,23 +456,21 @@ func eventChannelOpenAndDeposit2StateChange(ev *contracts.TokenNetworkChannelOpe
 //eventChannelNewDeposit2StateChange to statechange
 func eventChannelNewDeposit2StateChange(ev *contracts.TokenNetworkChannelNewDeposit) *mediatedtransfer.ContractBalanceStateChange {
 	return &mediatedtransfer.ContractBalanceStateChange{
-		ChannelIdentifier:   ev.ChannelIdentifier,
-		TokenNetworkAddress: ev.Raw.Address,
-		ParticipantAddress:  ev.Participant,
-		BlockNumber:         int64(ev.Raw.BlockNumber),
-		Balance:             ev.TotalDeposit,
+		ChannelIdentifier:  ev.ChannelIdentifier,
+		ParticipantAddress: ev.Participant,
+		BlockNumber:        int64(ev.Raw.BlockNumber),
+		Balance:            ev.TotalDeposit,
 	}
 }
 
 //eventChannelClosed2StateChange to statechange
 func eventChannelClosed2StateChange(ev *contracts.TokenNetworkChannelClosed) *mediatedtransfer.ContractClosedStateChange {
 	c := &mediatedtransfer.ContractClosedStateChange{
-		TokenNetworkAddress: ev.Raw.Address,
-		ChannelIdentifier:   ev.ChannelIdentifier,
-		ClosingAddress:      ev.ClosingParticipant,
-		LocksRoot:           ev.Locksroot,
-		ClosedBlock:         int64(ev.Raw.BlockNumber),
-		TransferredAmount:   ev.TransferredAmount,
+		ChannelIdentifier: ev.ChannelIdentifier,
+		ClosingAddress:    ev.ClosingParticipant,
+		LocksRoot:         ev.Locksroot,
+		ClosedBlock:       int64(ev.Raw.BlockNumber),
+		TransferredAmount: ev.TransferredAmount,
 	}
 	if ev.TransferredAmount == nil {
 		c.TransferredAmount = new(big.Int)
@@ -538,12 +481,11 @@ func eventChannelClosed2StateChange(ev *contracts.TokenNetworkChannelClosed) *me
 //eventBalanceProofUpdated2StateChange to statechange
 func eventBalanceProofUpdated2StateChange(ev *contracts.TokenNetworkBalanceProofUpdated) *mediatedtransfer.ContractBalanceProofUpdatedStateChange {
 	c := &mediatedtransfer.ContractBalanceProofUpdatedStateChange{
-		TokenNetworkAddress: ev.Raw.Address,
-		ChannelIdentifier:   ev.ChannelIdentifier,
-		LocksRoot:           ev.Locksroot,
-		TransferAmount:      ev.TransferredAmount,
-		Participant:         ev.Participant,
-		BlockNumber:         int64(ev.Raw.BlockNumber),
+		ChannelIdentifier: ev.ChannelIdentifier,
+		LocksRoot:         ev.Locksroot,
+		TransferAmount:    ev.TransferredAmount,
+		Participant:       ev.Participant,
+		BlockNumber:       int64(ev.Raw.BlockNumber),
 	}
 	if c.TransferAmount == nil {
 		c.TransferAmount = new(big.Int)
@@ -554,12 +496,11 @@ func eventBalanceProofUpdated2StateChange(ev *contracts.TokenNetworkBalanceProof
 //eventChannelUnlocked2StateChange to statechange
 func eventChannelUnlocked2StateChange(ev *contracts.TokenNetworkChannelUnlocked) *mediatedtransfer.ContractUnlockStateChange {
 	c := &mediatedtransfer.ContractUnlockStateChange{
-		TokenNetworkAddress: ev.Raw.Address,
-		ChannelIdentifier:   ev.ChannelIdentifier,
-		BlockNumber:         int64(ev.Raw.BlockNumber),
-		TransferAmount:      ev.TransferredAmount,
-		Participant:         ev.PayerParticipant,
-		LockHash:            ev.Lockhash,
+		ChannelIdentifier: ev.ChannelIdentifier,
+		BlockNumber:       int64(ev.Raw.BlockNumber),
+		TransferAmount:    ev.TransferredAmount,
+		Participant:       ev.PayerParticipant,
+		LockHash:          ev.Lockhash,
 	}
 	if c.TransferAmount == nil {
 		c.TransferAmount = new(big.Int)
