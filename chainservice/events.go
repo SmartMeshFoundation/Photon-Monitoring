@@ -114,6 +114,7 @@ todo 限制锁的数量不能超过settle_timeout/2或者这里的 unlock 以及
 func (ce *ChainEvents) handleClosedStateChange(st2 *mediatedtransfer.ContractClosedStateChange) {
 	log.Info(fmt.Sprintf("channel closed %s", st2.ChannelIdentifier.String()))
 	ds, err := ce.db.DelegateGetByChannelIdentifier(st2.ChannelIdentifier)
+	//log.Trace(fmt.Sprintf("ds=%s,err=%s", utils.StringInterface(ds, 3), err))
 	if err != nil {
 		if err != storm.ErrNotFound {
 			log.Error(fmt.Sprintf("DelegateGetByChannelIdentifier for ContractReceiveClosedStateChange err=%s st=%s",
@@ -121,6 +122,9 @@ func (ce *ChainEvents) handleClosedStateChange(st2 *mediatedtransfer.ContractClo
 			return
 		}
 	} else {
+		if ds == nil { //没有什么要做的
+			return
+		}
 		tokenNetwork, err := ce.bcs.TokenNetwork(ds[0].TokenAddress)
 		if err != nil {
 			log.Error(fmt.Sprintf("create token network  error for token %s", ds[0].TokenAddress.String()))

@@ -205,6 +205,7 @@ func config(ctx *cli.Context) {
 	userDbPath := hex.EncodeToString(params.Address[:])
 	userDbPath = userDbPath[:8]
 	userDbPath = filepath.Join(params.DataDir, userDbPath)
+	log.Trace(fmt.Sprintf("dbpath=%s", userDbPath))
 	if !utils.Exists(userDbPath) {
 		err = os.MkdirAll(userDbPath, os.ModePerm)
 		if err != nil {
