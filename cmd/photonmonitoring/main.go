@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"math/big"
 	"strings"
@@ -23,6 +24,7 @@ import (
 	"github.com/SmartMeshFoundation/Photon-Monitoring/smt"
 	"github.com/SmartMeshFoundation/Photon/log"
 	"github.com/SmartMeshFoundation/Photon/network/helper"
+	smparams "github.com/SmartMeshFoundation/Photon/params"
 	"github.com/SmartMeshFoundation/Photon/utils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -141,7 +143,11 @@ func mainCtx(ctx *cli.Context) error {
 		log.Error(fmt.Sprintf("cannot connect to geth :%s err=%s", ethEndpoint, err))
 		utils.SystemExit(1)
 	}
-
+	smparams.ChainID, err = client.NetworkID(context.Background())
+	if err != nil {
+		log.Error(fmt.Sprintf("get network id err %s", err))
+		utils.SystemExit(1)
+	}
 	db, err := models.OpenDb(params.DataBasePath)
 	if err != nil {
 		log.Error(fmt.Sprintf("err=%s", err))
