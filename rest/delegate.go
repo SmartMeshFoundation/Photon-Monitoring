@@ -19,27 +19,26 @@ SM 应该校验用户提交信息,比如签名是否正确, nonce 是否比上�
 Post /\<delegater\>/delegate
 ```json
 {
-    "channel_address": "0x5B3F0E96E45e1e4351F6460feBfB6007af25FBB0",
- "update_transfer":{
-        "nonce": 32,
-        "transferred_amount": 1800000000000000,
-        "locksroot": " 0x447b478a024ade59c5c18e348c357aae6a4ec6e30131213f8cf6444214c57e89",
-        "extra_hash": " 0x557b478a024ade59c5c18e348c357aae6a4ec6e30131213f8cf6444214c57e89",
-        "closing_signature": " 0x557b478a024ade59c5c18e348c357aae6a4ec6e30131213f8cf6444214c57e89557b478a024ade59c5c18e348c357aae6a4ec6e30131213f8cf6444214c57e8927",
-        "non_closing_signature": " 0x557b478a024ade59c5c18e348c357aae6a4ec6e30131213f8cf6444214c57e89557b478a024ade59c5c18e348c357aae6a4ec6e30131213f8cf6444214c57e8927"
- },
- "withdraws":[
-     {
-        "locked_encoded": "0x00000033333333333333333333333333333333333333333",
-        "merkle_proof": "0x3333333333333333333333333333",
-        "secret": "0x333333333333333333333333333333333333333",
-     },
-      {
-        "locked_encoded": "0x00000033333333333333333333333333333333333333333",
-        "merkle_proof": "0x3333333333333333333333333333",
-        "secret": "0x333333333333333333333333333333333333333",
-     },
- ],
+    "channel_identifier": "0x4fa00ea25da02ecce11ced3d6167601c67762933adb98dfd82ad4f9b40f4db1a",
+    "open_block_number": 15338350,
+    "token_address": "0x261e9136f561ae44788bd2a08039075119c02eb3",
+    "partner_address": "0x3af7fbddef2cebeeb850328a0834aa9a29684332",
+    "update_transfer": {
+        "nonce": 0,
+        "transfer_amount": null,
+        "locksroot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "extra_hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "closing_signature": null,
+        "non_closing_signature": null
+    },
+    "unlocks": null,
+    "punishes": [
+        {
+            "lock_hash": "0x933c446b9ee22072f26677561d25b1219cf0bc1ebd3cc5c1d8fa23270df6f609",
+            "additional_hash": "0x9ec2e16ee3f883ae1becadd741ff41f03c28f423e532c8beea10034af73a65f5",
+            "signature": "Wx2DpiTU/CE1l/FtgCxfhIcheRyxj3V9fgmOJ2HeenoeiQUFzE6XMDcPJ9R43OICXxuQBdxOQm25khbp1GbpYRw="
+        }
+    ]
 }
 ```
 

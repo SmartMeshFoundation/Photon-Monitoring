@@ -20,7 +20,7 @@ import (
 	"github.com/SmartMeshFoundation/Photon-Monitoring/internal/debug"
 	"github.com/SmartMeshFoundation/Photon-Monitoring/models"
 	"github.com/SmartMeshFoundation/Photon-Monitoring/params"
-	"github.com/SmartMeshFoundation/Photon-Monitoring/rest"
+	restful "github.com/SmartMeshFoundation/Photon-Monitoring/rest"
 	"github.com/SmartMeshFoundation/Photon-Monitoring/smt"
 	"github.com/SmartMeshFoundation/Photon/log"
 	"github.com/SmartMeshFoundation/Photon/network/helper"
@@ -92,17 +92,17 @@ func StartMain() {
 		cli.StringFlag{
 			Name:  "unlock-fee",
 			Usage: "fee for a unlock Transaction",
-			Value: "1000000000000000000",
+			Value: "0",
 		},
 		cli.StringFlag{
 			Name:  "punish-fee",
 			Usage: "fee for a punish Transaction",
-			Value: "2000000000000000000",
+			Value: "0",
 		},
 		cli.StringFlag{
 			Name:  "update-transfer-fee",
 			Usage: "fee for update transfer Transaction ",
-			Value: "3000000000000000000",
+			Value: "0",
 		},
 		cli.StringFlag{
 			Name:  "photon-url",
@@ -249,4 +249,6 @@ func config(ctx *cli.Context) {
 		utils.SystemExit(1)
 	}
 	params.PhotonURL = url
+	//调试状态,不检测balanceProof中的nonce新旧,直接覆盖
+	params.DebugMode = ctx.Bool("debug")
 }

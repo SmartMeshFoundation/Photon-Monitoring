@@ -135,6 +135,20 @@ func (model *ModelDB) DelegateDeleteDelegate(d *Delegate) error {
 	return err
 }
 
+//将d中的punish合并到c中
+func mergePunish(c *ChannelFor3rd, d *Delegate) {
+	m := make(map[common.Hash]*Punish)
+	for _, p := range c.Punishes {
+		m[p.LockHash] = p
+	}
+	for _, p := range d.Content.Punishes {
+		if m[p.LockHash] != nil {
+			continue
+		}
+		c.Punishes = append(c.Punishes, p)
+	}
+}
+
 //DelegateNewOrUpdateDelegate  accept a new delegate,error if the previous version of this delegate is running.
 func (model *ModelDB) DelegateNewOrUpdateDelegate(c *ChannelFor3rd, addr common.Address) error {
 	channelIdentifier := c.ChannelIdentifier
@@ -143,7 +157,10 @@ func (model *ModelDB) DelegateNewOrUpdateDelegate(c *ChannelFor3rd, addr common.
 		return fmt.Errorf("%s is running tx,cannot be replaced", model.delegateKey(c.ChannelIdentifier, addr))
 	}
 	d := model.DelegatetGet(c.ChannelIdentifier, addr)
-	if d.Content != nil && d.Status == DelegateStatusInit && d.Content.UpdateTransfer.Nonce >= c.UpdateTransfer.Nonce {
+	/*
+		考虑到测试网上用户可能删除数据,从而导致nonce重新开始,因此允许旧的balanceProof覆盖新的
+	*/
+	if !params.DebugMode && d.Content != nil && d.Status == DelegateStatusInit && d.Content.UpdateTransfer.Nonce >= c.UpdateTransfer.Nonce {
 		return fmt.Errorf("only delegate newer nonce ,old nonce=%d,new=%d", d.Content.UpdateTransfer.Nonce, c.UpdateTransfer.Nonce)
 	}
 	if d.Status != DelegateStatusInit {
@@ -151,6 +168,7 @@ func (model *ModelDB) DelegateNewOrUpdateDelegate(c *ChannelFor3rd, addr common.
 	}
 	newsmt = CalcNeedSmtForThisChannel(c)
 	if d.Content != nil {
+		mergePunish(c, d)
 		oldsmt = CalcNeedSmtForThisChannel(d.Content)
 	} else {
 		oldsmt = big.NewInt(0)

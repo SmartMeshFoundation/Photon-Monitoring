@@ -46,6 +46,9 @@ var DataDir string
 //DataBasePath where db stored
 var DataBasePath string
 
+//DebugMode for debug setting
+var DebugMode = false
+
 func init() {
 	SmtUnlock = big.NewInt(1)
 	SmtPunish = big.NewInt(2)

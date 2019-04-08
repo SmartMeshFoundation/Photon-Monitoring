@@ -112,7 +112,7 @@ todo 限制锁的数量不能超过settle_timeout/2或者这里的 unlock 以及
 2. 设置 punish 发生在 settle time out 到期时间
 */
 func (ce *ChainEvents) handleClosedStateChange(st2 *mediatedtransfer.ContractClosedStateChange) {
-	log.Info(fmt.Sprintf("channel closed %s", st2.ChannelIdentifier.String()))
+	log.Info(fmt.Sprintf("channel closed %s", utils.StringInterface(st2, 3)))
 	ds, err := ce.db.DelegateGetByChannelIdentifier(st2.ChannelIdentifier)
 	//log.Trace(fmt.Sprintf("ds=%s,err=%s", utils.StringInterface(ds, 3), err))
 	if err != nil {
@@ -187,6 +187,7 @@ func (ce *ChainEvents) handleBalanceProofUpdatedStateChange(st2 *mediatedtransfe
 暂时先删除记录,后续根据需要再做修改
 */
 func (ce *ChainEvents) handleSettledStateChange(st2 *mediatedtransfer.ContractSettledStateChange) {
+	log.Trace(fmt.Sprintf("recevied contractsettledStateChange %s", utils.StringInterface(st2, 3)))
 	ds, err := ce.db.DelegateGetByChannelIdentifier(st2.ChannelIdentifier)
 	if err != nil {
 		log.Error(fmt.Sprintf("DelegateGetByChannelIdentifier err %s", err))
@@ -205,6 +206,7 @@ func (ce *ChainEvents) handleSettledStateChange(st2 *mediatedtransfer.ContractSe
 说明没有纠纷,因此也不需要提交证明了,并且因为通道 open block number 改变,原来的委托肯定也作废了
 */
 func (ce *ChainEvents) handleCooperativeSettledStateChange(st2 *mediatedtransfer.ContractCooperativeSettledStateChange) {
+	log.Trace(fmt.Sprintf("recevied ContractCooperativeSettledStateChange %s", utils.StringInterface(st2, 3)))
 	ds, err := ce.db.DelegateGetByChannelIdentifier(st2.ChannelIdentifier)
 	if err != nil {
 		log.Error(fmt.Sprintf("DelegateGetByChannelIdentifier err %s", err))
@@ -222,6 +224,7 @@ func (ce *ChainEvents) handleCooperativeSettledStateChange(st2 *mediatedtransfer
 说明没有纠纷,因此也不需要提交证明了,并且因为通道 open block number 改变,原来的委托肯定也作废了
 */
 func (ce *ChainEvents) handleWithdrawStateChange(st2 *mediatedtransfer.ContractChannelWithdrawStateChange) {
+	log.Trace(fmt.Sprintf("recevied ContractChannelWithdrawStateChange %s", utils.StringInterface(st2, 3)))
 	ds, err := ce.db.DelegateGetByChannelIdentifier(st2.ChannelIdentifier.ChannelIdentifier)
 	if err != nil {
 		log.Error(fmt.Sprintf("DelegateGetByChannelIdentifier err %s", err))
@@ -238,6 +241,7 @@ func (ce *ChainEvents) handleWithdrawStateChange(st2 *mediatedtransfer.ContractC
 无法从连上直接获取当前注册了哪些token,只能按照事件检索.
 */
 func (ce *ChainEvents) handleTokenAddedStateChange(st *mediatedtransfer.ContractTokenAddedStateChange) {
+	log.Trace(fmt.Sprintf("recevied ContractTokenAddedStateChange %s", utils.StringInterface(st, 3)))
 	err := ce.db.AddToken(st.TokenAddress, utils.EmptyAddress)
 	if err != nil {
 		log.Error(fmt.Sprintf("handleTokenAddedStateChange err=%s, st=%s", err, utils.StringInterface1(st)))
@@ -272,6 +276,7 @@ func (ce *ChainEvents) handleStateChange(st transfer.StateChange) {
 		ce.handleSettledStateChange(st2)
 	case *mediatedtransfer.ContractTokenAddedStateChange:
 		ce.handleTokenAddedStateChange(st2)
+		//punish不是在收到unlock的时候发生,而是在通道可以settle的时候发生,
 	}
 }
 func (ce *ChainEvents) handleBlockNumber(n int64) {
@@ -597,6 +602,8 @@ func verifyClosingSignature(c *models.ChannelFor3rd) (signer common.Address, err
 		err = fmt.Errorf("delegate with nonce <=0")
 		return
 	}
+	log.Trace(fmt.Sprintf("c=%s", utils.StringInterface(c, 5)))
+	log.Trace(fmt.Sprintf("chaind=%s", smparams.ChainID.String()))
 	_, err = buf.Write(smparams.ContractSignaturePrefix)
 	_, err = buf.Write([]byte(smparams.ContractBalanceProofMessageLength))
 	_, err = buf.Write(utils.BigIntTo32Bytes(u.TransferAmount))
