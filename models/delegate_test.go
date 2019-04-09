@@ -119,6 +119,27 @@ func TestModelDB_DelegateNewDelegateWithPunishes(t *testing.T) {
 	ast.EqualValues(len(d.Content.Unlocks), 0)
 	ast.EqualValues(len(d.Content.Punishes), 4)
 
+	//测试AnnouceDisposed
+	c.AnnouceDisposed = []*AnnouceDisposed{
+		{utils.NewRandomHash()},
+		{utils.NewRandomHash()},
+	}
+	c.UpdateTransfer.Nonce = 3
+	err = m.DelegateNewOrUpdateDelegate(c, addr)
+	ast.Nil(err)
+	d = m.DelegatetGet(c.ChannelIdentifier, addr)
+	ast.EqualValues(len(d.Content.AnnouceDisposed), 2)
+
+	c.AnnouceDisposed = []*AnnouceDisposed{
+		{utils.NewRandomHash()},
+		{utils.NewRandomHash()},
+	}
+	c.UpdateTransfer.Nonce = 4
+	err = m.DelegateNewOrUpdateDelegate(c, addr)
+	ast.Nil(err)
+	d = m.DelegatetGet(c.ChannelIdentifier, addr)
+	ast.EqualValues(len(d.Content.AnnouceDisposed), 4)
+
 	//测试nonce 覆盖问题
 	err = m.DelegateNewOrUpdateDelegate(c, addr)
 	ast.NotNil(err)

@@ -356,6 +356,17 @@ func (ce *ChainEvents) updateTransfer(d *models.Delegate) {
 		ce.db.DelegateSave(d)
 		hasErr := false
 		for _, w := range d.Content.Unlocks {
+			shouldGiveup := false
+			lockSecretHash := utils.ShaSecret(w.Secret[:])
+			for _, a := range d.Content.AnnouceDisposed {
+				if a.LockSecretHash == lockSecretHash {
+					shouldGiveup = true
+					break
+				}
+			}
+			if shouldGiveup {
+				continue
+			}
 			err := ce.doUnlock(w, d.PartnerAddress, d.Address, d.TokenAddress, common.BytesToHash(d.ChannelIdentifier), d.Content.UpdateTransfer.TransferAmount)
 			if err != nil {
 				log.Error(fmt.Sprintf("doUnlock %s %s err %s", d.Key, w.Secret, err))

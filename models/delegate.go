@@ -98,15 +98,18 @@ type Unlock struct {
 
 //ChannelFor3rd is for 3rd party to call update transfer
 type ChannelFor3rd struct {
-	ChannelIdentifier common.Hash    `json:"channel_identifier"`
-	OpenBlockNumber   int64          `json:"open_block_number"`
-	TokenAddress      common.Address `json:"token_address"`
-	PartnerAddress    common.Address `json:"partner_address"`
-	UpdateTransfer    UpdateTransfer `json:"update_transfer"`
-	Unlocks           []*Unlock      `json:"unlocks"`
-	Punishes          []*Punish      `json:"punishes"`
+	ChannelIdentifier common.Hash        `json:"channel_identifier"`
+	OpenBlockNumber   int64              `json:"open_block_number"`
+	TokenAddress      common.Address     `json:"token_address"`
+	PartnerAddress    common.Address     `json:"partner_address"`
+	UpdateTransfer    UpdateTransfer     `json:"update_transfer"`
+	Unlocks           []*Unlock          `json:"unlocks"`
+	Punishes          []*Punish          `json:"punishes"`
+	AnnouceDisposed   []*AnnouceDisposed `json:"annouce_disposed"`
 }
 
+//todo punish和AnnouceDisposed可能会很多,运行一段时间以后很容易累积成百上千,甚至更多,因此这种直接保存在结构体中的并不合适,
+//需要择机重构.
 //Punish 需要委托给第三方的 punish证据
 type Punish struct {
 	LockHash       common.Hash `json:"lock_hash"` //the whole lock's hash,not lock secret hash
@@ -115,6 +118,10 @@ type Punish struct {
 	TxStatus       int
 	TxError        string
 	TxHash         common.Hash
+}
+
+type AnnouceDisposed struct {
+	LockSecretHash common.Hash `json:secret_hash`
 }
 
 //DelegateDeleteDelegate move delegate from bucket[Delegate] to bucket[RemovedDelegate]
@@ -149,6 +156,23 @@ func mergePunish(c *ChannelFor3rd, d *Delegate) {
 	}
 }
 
+//将d中的AnnounceDisposed合并到c中
+func mergeAnnounceDisposed(c *ChannelFor3rd, d *Delegate) {
+	if len(d.Content.AnnouceDisposed) <= 0 {
+		return
+	}
+	m := make(map[common.Hash]*AnnouceDisposed)
+	for _, p := range c.AnnouceDisposed {
+		m[p.LockSecretHash] = p
+	}
+	for _, p := range d.Content.AnnouceDisposed {
+		if m[p.LockSecretHash] != nil {
+			continue
+		}
+		c.AnnouceDisposed = append(c.AnnouceDisposed, p)
+	}
+}
+
 //DelegateNewOrUpdateDelegate  accept a new delegate,error if the previous version of this delegate is running.
 func (model *ModelDB) DelegateNewOrUpdateDelegate(c *ChannelFor3rd, addr common.Address) error {
 	channelIdentifier := c.ChannelIdentifier
@@ -169,6 +193,7 @@ func (model *ModelDB) DelegateNewOrUpdateDelegate(c *ChannelFor3rd, addr common.
 	newsmt = CalcNeedSmtForThisChannel(c)
 	if d.Content != nil {
 		mergePunish(c, d)
+		mergeAnnounceDisposed(c, d)
 		oldsmt = CalcNeedSmtForThisChannel(d.Content)
 	} else {
 		oldsmt = big.NewInt(0)
