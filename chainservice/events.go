@@ -575,6 +575,20 @@ func (ce *ChainEvents) doPunish(p *models.Punish, d *models.Delegate) error {
 func (ce *ChainEvents) VerifyDelegate(c *models.ChannelFor3rd, delegater common.Address) error {
 	partner := c.PartnerAddress
 	haveValidData := false
+	tokenNetwork, err := ce.bcs.TokenNetwork(c.TokenAddress)
+	if err != nil {
+		return err
+	}
+	_, openBlockNumber, _, _, err := tokenNetwork.GetContract().GetChannelInfoByChannelIdentifier(nil, c.ChannelIdentifier)
+	if err != nil {
+		return fmt.Errorf("channel %s get channel info err %s", c.ChannelIdentifier.String(), err)
+	}
+	//openBlockNumber 表示通道不存在,
+	if openBlockNumber == 0 || c.OpenBlockNumber != int64(openBlockNumber) {
+		return fmt.Errorf("channel %s open blocknumber not match on chain, chain's openblocknumber=%d,delegate's=%d",
+			c.ChannelIdentifier.String(), openBlockNumber, c.OpenBlockNumber,
+		)
+	}
 	if c.UpdateTransfer.Nonce > 0 {
 		closingAddr, err := verifyClosingSignature(c)
 		if err != nil {

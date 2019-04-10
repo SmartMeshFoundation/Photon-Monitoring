@@ -153,7 +153,12 @@ func mainCtx(ctx *cli.Context) error {
 		utils.SystemExit(2)
 	}
 	sq := smt.NewSmtQuery(params.PhotonURL, db, 0)
-	sq.Start()
+	//默认PMS不收费,如果收费再去连接关联的photon节点
+	if params.SmtUpdateTransfer.Cmp(utils.BigInt0) > 0 ||
+		params.SmtPunish.Cmp(utils.BigInt0) > 0 ||
+		params.SmtUnlock.Cmp(utils.BigInt0) > 0 {
+		sq.Start()
+	}
 	ce := chainservice.NewChainEvents(params.PrivKey, client, params.RegistryAddress, db)
 	err = ce.Start()
 	if err != nil {
