@@ -132,7 +132,6 @@ func StartMain() {
 }
 
 func mainCtx(ctx *cli.Context) error {
-
 	var err error
 	fmt.Printf("Welcom to Photon monitoring,version %s\n", ctx.App.Version)
 	config(ctx)

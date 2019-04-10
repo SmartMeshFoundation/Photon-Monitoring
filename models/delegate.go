@@ -63,7 +63,7 @@ type Delegate struct {
 	MaxBlockNumber    int64     //Tx 最晚开始块
 	Status            int       `storm:"index"`
 	Error             string
-	Content           *ChannelFor3rd
+	Content           ChannelFor3rd
 }
 
 //RemovedDelegate represents a finished delegate, when a channel is settled? or withdrawed?
@@ -89,7 +89,6 @@ type UpdateTransfer struct {
 type Unlock struct {
 	Lock        *mtree.Lock `json:"lock"`
 	MerkleProof []byte      `json:"merkle_proof"`
-	Secret      common.Hash `json:"secret"`
 	Signature   []byte      `json:"signature"`
 	TxStatus    int
 	TxError     string
@@ -142,34 +141,37 @@ func (model *ModelDB) DelegateDeleteDelegate(d *Delegate) error {
 	return err
 }
 
-//将d中的punish合并到c中
+//将c中的punish合并到d中,如果d中已存在,则忽略.
 func mergePunish(c *ChannelFor3rd, d *Delegate) {
+	if len(c.Punishes) <= 0 {
+		return
+	}
 	m := make(map[common.Hash]*Punish)
-	for _, p := range c.Punishes {
+	for _, p := range d.Content.Punishes {
 		m[p.LockHash] = p
 	}
-	for _, p := range d.Content.Punishes {
+	for _, p := range c.Punishes {
 		if m[p.LockHash] != nil {
 			continue
 		}
-		c.Punishes = append(c.Punishes, p)
+		d.Content.Punishes = append(d.Content.Punishes, p)
 	}
 }
 
-//将d中的AnnounceDisposed合并到c中
+//将c中的AnnounceDisposed合并到d中,如果d中已存在,则忽略
 func mergeAnnounceDisposed(c *ChannelFor3rd, d *Delegate) {
-	if len(d.Content.AnnouceDisposed) <= 0 {
+	if len(c.AnnouceDisposed) <= 0 {
 		return
 	}
 	m := make(map[common.Hash]*AnnouceDisposed)
-	for _, p := range c.AnnouceDisposed {
+	for _, p := range d.Content.AnnouceDisposed {
 		m[p.LockSecretHash] = p
 	}
-	for _, p := range d.Content.AnnouceDisposed {
+	for _, p := range c.AnnouceDisposed {
 		if m[p.LockSecretHash] != nil {
 			continue
 		}
-		c.AnnouceDisposed = append(c.AnnouceDisposed, p)
+		d.Content.AnnouceDisposed = append(d.Content.AnnouceDisposed, p)
 	}
 }
 
@@ -177,33 +179,44 @@ func mergeAnnounceDisposed(c *ChannelFor3rd, d *Delegate) {
 func (model *ModelDB) DelegateNewOrUpdateDelegate(c *ChannelFor3rd, addr common.Address) error {
 	channelIdentifier := c.ChannelIdentifier
 	var newsmt, oldsmt *big.Int
-	if !model.delegateCanCreateOrUpdate(c, addr) {
-		return fmt.Errorf("%s is running tx,cannot be replaced", model.delegateKey(c.ChannelIdentifier, addr))
-	}
+
+	//if !model.delegateCanCreateOrUpdate(c, addr) {
+	//	return fmt.Errorf("%s is running tx,cannot be replaced", model.delegateKey(c.ChannelIdentifier, addr))
+	//}
 	d := model.DelegatetGet(c.ChannelIdentifier, addr)
 	/*
 		考虑到测试网上用户可能删除数据,从而导致nonce重新开始,因此允许旧的balanceProof覆盖新的
+		正常情况下,相同的Nonce可以反复更新,比如我发出了AnnouceDisposed,这时候也需要更新
 	*/
-	if !params.DebugMode && d.Content != nil && d.Status == DelegateStatusInit && d.Content.UpdateTransfer.Nonce >= c.UpdateTransfer.Nonce {
+	if !params.DebugMode && d.Status == DelegateStatusInit && d.Content.UpdateTransfer.Nonce > c.UpdateTransfer.Nonce {
 		return fmt.Errorf("only delegate newer nonce ,old nonce=%d,new=%d", d.Content.UpdateTransfer.Nonce, c.UpdateTransfer.Nonce)
 	}
 	if d.Status != DelegateStatusInit {
 		log.Warn(fmt.Sprintf("old delegate will be replaced, a channle was settled and re create? d=\n%s", utils.StringInterface(d, 4)))
 	}
 	newsmt = CalcNeedSmtForThisChannel(c)
-	if d.Content != nil {
-		mergePunish(c, d)
-		mergeAnnounceDisposed(c, d)
-		oldsmt = CalcNeedSmtForThisChannel(d.Content)
-	} else {
-		oldsmt = big.NewInt(0)
-	}
+
+	mergePunish(c, d)
+	mergeAnnounceDisposed(c, d)
+	oldsmt = CalcNeedSmtForThisChannel(&d.Content)
 	d.Time = time.Now()
 	d.Key = model.delegateKey(channelIdentifier, addr)
 	d.ChannelIdentifier = channelIdentifier[:]
 	d.OpenBlockNumber = c.OpenBlockNumber
 	d.Address = addr
-	d.Content = c
+	if d.Status == DelegateStatusRunning {
+		//PMS提交BalanceProof延迟到RevealTimeout,这时候就拒绝接受新的unlock和balanceProof
+		//已经提交了BalanceProof,这时候就不要在更新balanceProof了,也不能更新unlock ,只能更新punish.
+
+		//punish已经合并,无需处理
+	} else {
+		d.Content.UpdateTransfer = c.UpdateTransfer
+		d.Content.Unlocks = c.Unlocks
+		d.Content.ChannelIdentifier = c.ChannelIdentifier
+		d.Content.OpenBlockNumber = c.OpenBlockNumber
+		d.Content.PartnerAddress = c.PartnerAddress
+		d.Content.TokenAddress = c.TokenAddress
+	}
 	d.TokenAddress = c.TokenAddress
 	d.PartnerAddress = c.PartnerAddress
 
@@ -309,12 +322,18 @@ func CalcNeedSmtForThisChannel(c *ChannelFor3rd) *big.Int {
 	return n
 }
 
-//CalceNeedSmtForUpdateBalanceProofAndUnlock returns how much smt need to update balance proof and unlock
-func CalceNeedSmtForUpdateBalanceProofAndUnlock(c *ChannelFor3rd) *big.Int {
+//CalceNeedSmtForUpdateBalanceProof returns how much smt need to update balance proof
+func CalceNeedSmtForUpdateBalanceProof(c *ChannelFor3rd) *big.Int {
 	n := new(big.Int)
 	if c.UpdateTransfer.Nonce > 0 {
 		n = n.Add(n, params.SmtUpdateTransfer)
 	}
+	return n
+}
+
+//CalceNeedSmtForUnlock returns how much smt need to u  unlock
+func CalceNeedSmtForUnlock(c *ChannelFor3rd) *big.Int {
+	n := new(big.Int)
 	for range c.Unlocks {
 		n = n.Add(n, params.SmtUnlock)
 	}

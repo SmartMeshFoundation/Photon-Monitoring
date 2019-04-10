@@ -108,8 +108,18 @@ func (ce *ChainEvents) loop() {
 /*
 一个通道关闭了,主要进行的就是设置
 todo 限制锁的数量不能超过settle_timeout/2或者这里的 unlock 以及updatebalanceproof 用并行模式
-1. updateBalanceProof以及/ unlock, 这些发生在 settle time out 的后半段
-2. 设置 punish 发生在 settle time out 到期时间
+考虑到实际交易过程中,App可能会随时切换到无网状态,为了保证利益,委托应该设计成这样.
+1. 通道关闭的时候,记录下需要在settleBlockNumber减去RevealTimeout进行进行updateBalanceProof,
+2. 如果需要,同时记录下,需要在settleBlockNumber减去RevealTimeout进行unlock
+3. 如果需要,同时记录下,需要在settleBlockNumber进行punish
+
+根据从链上获取的settleBlockNumber和settleTimeout进行判断,当前委托是要进行updatebalanceproof还是进行unlock和punish
+
+考虑到App有可能在通道关闭以后,settleBlockNumber之前随时更新unlock和punish,因此委托处理必须允许这种情况.
+同时如果委托时发现通道已经关闭,那么应该根据情况更新步骤2,3中的记录
+
+//todo 如何测试呢?
+
 */
 func (ce *ChainEvents) handleClosedStateChange(st2 *mediatedtransfer.ContractClosedStateChange) {
 	log.Info(fmt.Sprintf("channel closed %s", utils.StringInterface(st2, 3)))
@@ -130,7 +140,7 @@ func (ce *ChainEvents) handleClosedStateChange(st2 *mediatedtransfer.ContractClo
 			log.Error(fmt.Sprintf("create token network  error for token %s", ds[0].TokenAddress.String()))
 			return
 		}
-		settleBlockNumber, _, _, settleTimeout, err := tokenNetwork.GetContract().GetChannelInfoByChannelIdentifier(nil, st2.ChannelIdentifier)
+		settleBlockNumber, _, _, _, err := tokenNetwork.GetContract().GetChannelInfoByChannelIdentifier(nil, st2.ChannelIdentifier)
 		if err != nil {
 			log.Error(fmt.Sprintf("channel %s get settle timeout err %s", st2.ChannelIdentifier.String(), err))
 			return
@@ -144,27 +154,36 @@ func (ce *ChainEvents) handleClosedStateChange(st2 *mediatedtransfer.ContractClo
 				err = ce.db.DelegateMonitorAdd(d.SettleBlockNumber, d.Key)
 				ce.db.DelegateSave(d)
 			}
-			/*
-				close 一方是不需要第三方代理来 UpdateBalanceProof 和 Withdraw 的,他自己会做.
-			*/
-			if d.Address == st2.ClosingAddress {
-				//if the delegator closed this channel, dont need update
-				d.Status = models.DelegateStatusSuccessFinishedByOther
-				d.Error = "delegator closed channel"
-				ce.db.DelegateSave(d)
-				continue
-			}
 			//只有 punish, 没有 BalanceProof 的委托也是允许的
 			if d.Content.UpdateTransfer.Nonce > 0 {
 				/*
-					代理只能在过settle time out 过半进行
+					close 一方是不需要第三方代理来 UpdateBalanceProof 和 Withdraw 的,他自己会做.
 				*/
-				blockNumber := settleBlockNumber - settleTimeout/2 + 1
+				if d.Address == st2.ClosingAddress {
+					//if the delegator closed this channel, dont need update
+					d.Status = models.DelegateStatusSuccessFinishedByOther
+					d.Error = "delegator closed channel"
+					ce.db.DelegateSave(d)
+					//虽然App可能是自己主动关闭通道,但是它持有的锁仍然要保证安全
+					if len(d.Content.Unlocks) > 0 {
+						err = ce.db.DelegateMonitorAdd(d.SettleBlockNumber-int64(params.RevealTimeout), d.Key)
+						ce.db.DelegateSave(d)
+					}
+					continue
+				}
+				/*
+					PMS在RevealTimeout时进行updateBalanceProof
+					主要基于如下考虑:
+					1. 避免PMS和photon自身balanceProof提交产生的冲突问题
+					2. 在主链上RevealTimeout非常长,足够应付各种情况.
+					3. 如果photon保持无网到RevealTimeout这么久,出现安全问题,photon自己担责.
+				*/
+				blockNumber := settleBlockNumber - uint64(params.RevealTimeout)
 				err = ce.db.DelegateMonitorAdd(int64(blockNumber), d.Key)
 				if err != nil {
 					log.Error(fmt.Sprintf("DelegateMonitorAdd err %s", err))
 				}
-
+				//持有的锁会在updateBalanceProof的同时进行解锁.无需专门添加时间.
 				log.Info(fmt.Sprintf("%s will updatedTransfer @ %d,closedBlock=%d", d.Key, blockNumber, st2.ClosedBlock))
 			}
 		}
@@ -175,7 +194,7 @@ func (ce *ChainEvents) handleClosedStateChange(st2 *mediatedtransfer.ContractClo
 func (ce *ChainEvents) handleBalanceProofUpdatedStateChange(st2 *mediatedtransfer.ContractBalanceProofUpdatedStateChange) {
 	log.Info(fmt.Sprintf("recevie transfer update %s %s", st2.ChannelIdentifier.String(), st2.Participant.String()))
 	d := ce.db.DelegatetGet(st2.ChannelIdentifier, st2.Participant)
-	if d.Content != nil && d.Status == models.DelegateStatusInit {
+	if d.Status == models.DelegateStatusInit {
 		//have recevied delegate
 		d.Status = models.DelegateStatusSuccessFinishedByOther
 		ce.db.DelegateSave(d)
@@ -292,22 +311,33 @@ func (ce *ChainEvents) handleBlockNumber(n int64) {
 			//发生在通道可以 settle 时,说明是留给 punish的
 			if d.SettleBlockNumber == n {
 				go ce.doPunishes(d)
+				//RevealTimeout是专门留给unlock用的
+			} else if d.SettleBlockNumber-int64(params.RevealTimeout) == n {
+				go ce.doUnlocks(d)
 			} else {
 				if d.Status == models.DelegateStatusSuccessFinishedByOther {
 					log.Info(fmt.Sprintf("handle delegate ,but it's status=%d, delegate=%s", d.Status, utils.StringInterface(d, 4)))
+					//无论委托人是关闭方还是因为用户自己做了updateBalanceProof,解锁都会重新做一遍,大不了都失败而已.
+					go ce.doUnlocks(d)
 					continue
+				} else {
+					if d.Status != models.DelegateStatusInit {
+						log.Error(fmt.Sprintf("handle delegate error,it's status=%d,delegate=%s", d.Status, utils.StringInterface(d, 4)))
+						continue
+					}
+					d.Status = models.DelegateStatusRunning
+					err = ce.db.DelegateSetStatus(d.Status, d)
+					if err != nil {
+						log.Error(fmt.Sprintf("DelegateSetStatus  %s err %s", d.Key, err))
+						continue
+					}
+					go func() {
+						//先updateBalanceProof,无论成功与否都尝试进行unlock,就算是unlock尝试全部失败也要尝试.
+						ce.updateTransfer(d)
+						ce.doUnlocks(d)
+					}()
 				}
-				if d.Status != models.DelegateStatusInit {
-					log.Error(fmt.Sprintf("handle delegate error,it's status=%d,delegate=%s", d.Status, utils.StringInterface(d, 4)))
-					continue
-				}
-				d.Status = models.DelegateStatusRunning
-				err = ce.db.DelegateSetStatus(d.Status, d)
-				if err != nil {
-					log.Error(fmt.Sprintf("DelegateSetStatus  %s err %s", d.Key, err))
-					continue
-				}
-				go ce.updateTransfer(d)
+
 			}
 		}
 	}
@@ -324,7 +354,7 @@ updateTransfer 主要完成以下任务:
 todo 如何处理在执行过程中,程序要求退出,等待?计费?如何解决
 */
 func (ce *ChainEvents) updateTransfer(d *models.Delegate) {
-	needsmt := models.CalceNeedSmtForUpdateBalanceProofAndUnlock(d.Content)
+	needsmt := models.CalceNeedSmtForUpdateBalanceProof(&d.Content)
 	addr := d.Address
 	d.TxBlockNumber = ce.GetBlockNumber()
 	d.TxTime = time.Now()
@@ -354,44 +384,70 @@ func (ce *ChainEvents) updateTransfer(d *models.Delegate) {
 		}
 		d.Content.UpdateTransfer.TxStatus = models.TxStatusExecuteSuccessFinished
 		ce.db.DelegateSave(d)
-		hasErr := false
-		for _, w := range d.Content.Unlocks {
-			shouldGiveup := false
-			lockSecretHash := utils.ShaSecret(w.Secret[:])
-			for _, a := range d.Content.AnnouceDisposed {
-				if a.LockSecretHash == lockSecretHash {
-					shouldGiveup = true
-					break
-				}
-			}
-			if shouldGiveup {
-				continue
-			}
-			err := ce.doUnlock(w, d.PartnerAddress, d.Address, d.TokenAddress, common.BytesToHash(d.ChannelIdentifier), d.Content.UpdateTransfer.TransferAmount)
-			if err != nil {
-				log.Error(fmt.Sprintf("doUnlock %s %s err %s", d.Key, w.Secret, err))
-				hasErr = true
-				w.TxStatus = models.TxStatusExecueteErrorFinished
-				w.TxError = err.Error()
-				err2 := ce.db.AccountUnlockSmt(addr, params.SmtUnlock)
-				if err2 != nil {
-					log.Error(fmt.Sprintf("AccountUnlockSmt err %s", err))
-				}
-			} else {
-				w.TxStatus = models.TxStatusExecuteSuccessFinished
-				err2 := ce.db.AccountUseSmt(addr, params.SmtUnlock)
-				if err2 != nil {
-					log.Error(fmt.Sprintf("AccountUseSmt err %s", err))
-				}
-			}
-		}
-		if hasErr {
-			d.Status = models.DelegateStatusPartialSuccess
-		} else {
-			d.Status = models.DelegateStatusSuccessFinished
-		}
-		ce.db.DelegateSave(d)
 	}
+}
+
+/*
+为了简化起见,PMS并不考虑合适注册密码,以及密码是否注册,
+当可以unlock的时间到来以后,PMS会尝试去unlock委托的每一个锁,如果成功则扣费,不成功则不计费.
+todo 存在问题:
+有可能对手在setteblockNumber-RevealTimeout之后去注册密码.
+比如如下情形:
+A-B-C交易,C收到MedaitedTransfer以后,A立即关闭A,B通道,C选择在AB通道settle时间临近时注册密码.
+这样由于B来不及unlock,将会造成B的损失,而C不当得利.
+因此要求使用PMS的photon节点,交易中采用的RevealTimeout一定要大于等于PMS中的RevealTimeout,否则
+有可能造成损失
+*/
+func (ce *ChainEvents) doUnlocks(d *models.Delegate) error {
+	hasErr := false
+	needsmt := models.CalceNeedSmtForUnlock(&d.Content)
+	err := ce.db.AccountLockSmt(d.Address, needsmt)
+	if err != nil {
+		d.Status = models.DelegateStatusFailed
+		d.Error = fmt.Sprintf("smt not enough for unlock", err)
+		ce.db.DelegateSave(d)
+		return err
+	}
+	for _, w := range d.Content.Unlocks {
+		log.Debug("try to unlock for %s on %s,lock=%", utils.APex2(d.Address),
+			utils.HPex(d.Content.ChannelIdentifier), utils.HPex(w.Lock.LockSecretHash), w.Lock.Amount,
+		)
+		shouldGiveup := false
+		lockSecretHash := w.Lock.LockSecretHash
+		for _, a := range d.Content.AnnouceDisposed {
+			if a.LockSecretHash == lockSecretHash {
+				shouldGiveup = true
+				break
+			}
+		}
+		if shouldGiveup {
+			continue
+		}
+		err := ce.doUnlock(w, d.PartnerAddress, d.Address, d.TokenAddress, common.BytesToHash(d.ChannelIdentifier), d.Content.UpdateTransfer.TransferAmount)
+		if err != nil {
+			log.Error(fmt.Sprintf("doUnlock %s %s err %s", d.Key, w.Lock.LockSecretHash, err))
+			hasErr = true
+			w.TxStatus = models.TxStatusExecueteErrorFinished
+			w.TxError = err.Error()
+			err2 := ce.db.AccountUnlockSmt(d.Address, params.SmtUnlock)
+			if err2 != nil {
+				log.Error(fmt.Sprintf("AccountUnlockSmt err %s", err))
+			}
+		} else {
+			w.TxStatus = models.TxStatusExecuteSuccessFinished
+			err2 := ce.db.AccountUseSmt(d.Address, params.SmtUnlock)
+			if err2 != nil {
+				log.Error(fmt.Sprintf("AccountUseSmt err %s", err))
+			}
+		}
+	}
+	if hasErr {
+		d.Status = models.DelegateStatusPartialSuccess
+	} else {
+		d.Status = models.DelegateStatusSuccessFinished
+	}
+	ce.db.DelegateSave(d)
+	return nil
 }
 
 /*
@@ -402,7 +458,7 @@ func (ce *ChainEvents) updateTransfer(d *models.Delegate) {
 */
 func (ce *ChainEvents) doPunishes(d *models.Delegate) error {
 	hasSuccess := false
-	needsmt := models.CalceNeedSmtForPunish(d.Content)
+	needsmt := models.CalceNeedSmtForPunish(&d.Content)
 	err := ce.db.AccountLockSmt(d.Address, needsmt)
 	if err != nil {
 		d.Status = models.DelegateStatusFailed
@@ -468,7 +524,7 @@ func (ce *ChainEvents) doUpdateTransfer(d *models.Delegate) error {
 
 }
 func (ce *ChainEvents) doUnlock(w *models.Unlock, participant, partner, tokenAddress common.Address, channelAddr common.Hash, transferAmount *big.Int) error {
-	log.Info(fmt.Sprintf("unlock %s on %s for %s", w.Secret, utils.HPex(channelAddr), utils.APex(participant)))
+	log.Info(fmt.Sprintf("unlock %s on %s for %s", w.Lock.LockSecretHash, utils.HPex(channelAddr), utils.APex(participant)))
 	tokenNetwork, err := ce.bcs.TokenNetwork(tokenAddress)
 	if err != nil {
 		return err
@@ -484,7 +540,7 @@ func (ce *ChainEvents) doUnlock(w *models.Unlock, participant, partner, tokenAdd
 	w.TxHash = tx.Hash()
 	txReceipt, err := bind.WaitMined(rpc.GetCallContext(), ce.bcs.Client, tx)
 	if err != nil {
-		return fmt.Errorf("%s WithDraw failed with error:%s", w.Secret, err)
+		return fmt.Errorf("%s WithDraw failed with error:%s", w.Lock.LockSecretHash, err)
 	}
 	if txReceipt.Status != types.ReceiptStatusSuccessful {
 		return fmt.Errorf("withdraw failed %s,receipt=%s", utils.HPex(channelAddr), utils.StringInterface(txReceipt.Status, 3))

@@ -60,15 +60,11 @@ func Tx(w rest.ResponseWriter, r *rest.Request) {
 	res := &txResponse{
 		Delegate: d,
 	}
-	if d.Content != nil {
-		if db.AccountIsBalanceEnough(delegater) {
-			res.Status = delegateSuccess
-		} else {
-			res.Status = delegateSuccessButNotEnoughBalance
-		}
+
+	if db.AccountIsBalanceEnough(delegater) {
+		res.Status = delegateSuccess
 	} else {
-		res.Status = delegateError
-		res.Error = "no delegate"
+		res.Status = delegateSuccessButNotEnoughBalance
 	}
 
 	err2 = w.WriteJson(res)

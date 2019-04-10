@@ -49,6 +49,11 @@ var DataBasePath string
 //DebugMode for debug setting
 var DebugMode = false
 
+/*RevealTimeout 为了简化实现,PMS总是在临近通道结算过期时间时采取unlock,
+这样PMS就不用监听密码注册事件,只需尝试unlock即可,失败则忽略.
+*/
+var RevealTimeout = 30
+
 func init() {
 	SmtUnlock = big.NewInt(1)
 	SmtPunish = big.NewInt(2)

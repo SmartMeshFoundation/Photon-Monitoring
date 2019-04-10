@@ -11,6 +11,7 @@ import (
 )
 
 func TestModelDB_DelegateNewDelegate(t *testing.T) {
+	ast := assert.New(t)
 	m := SetupTestDb(t)
 	defer m.CloseDB()
 	c := &ChannelFor3rd{
@@ -58,12 +59,15 @@ func TestModelDB_DelegateNewDelegate(t *testing.T) {
 		return
 	}
 	c.UpdateTransfer.Nonce = 3
+	//即使已经开始执行委托了,仍然可以更新unlock和punish以及AnnouceDisposed,但是不能更新updatebalanceProof
 	err = m.DelegateNewOrUpdateDelegate(c, addr)
-	if err == nil {
+	if err != nil {
 		t.Error(err)
 		return
 	}
 	d = m.DelegatetGet(c.ChannelIdentifier, addr)
+	ast.EqualValues(d.Content.UpdateTransfer.Nonce, 2) //不应该更新
+
 	d.Status = DelegateStatusSuccessFinished
 	m.DelegateSave(d)
 
@@ -88,7 +92,7 @@ func TestModelDB_DelegateNewDelegateWithPunishes(t *testing.T) {
 	ast.Nil(err)
 	c.Unlocks = []*Unlock{
 		{
-			Secret: utils.NewRandomHash(),
+			SecretHash: utils.NewRandomHash(),
 		},
 	}
 	c.Punishes = []*Punish{
@@ -140,7 +144,8 @@ func TestModelDB_DelegateNewDelegateWithPunishes(t *testing.T) {
 	d = m.DelegatetGet(c.ChannelIdentifier, addr)
 	ast.EqualValues(len(d.Content.AnnouceDisposed), 4)
 
-	//测试nonce 覆盖问题
+	//测试nonce 覆盖问题,nonce可以相同,但是不能变小
+	c.UpdateTransfer.Nonce = 3
 	err = m.DelegateNewOrUpdateDelegate(c, addr)
 	ast.NotNil(err)
 	params.DebugMode = true
