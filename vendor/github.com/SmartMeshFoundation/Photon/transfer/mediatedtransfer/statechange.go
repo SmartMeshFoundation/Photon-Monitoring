@@ -105,7 +105,7 @@ type ReceiveAnnounceDisposedStateChange struct {
 //ReceiveUnlockStateChange A balance proof `identifier` was received.
 type ReceiveUnlockStateChange struct {
 	LockSecretHash common.Hash
-	NodeAddress    common.Address
+	NodeAddress    common.Address //sender of message unlock
 	BalanceProof   *transfer.BalanceProofState
 	Message        encoding.EnvelopMessager //the message trigger this statechange
 }
@@ -275,6 +275,17 @@ type ContractBalanceProofUpdatedStateChange struct {
 func (e *ContractBalanceProofUpdatedStateChange) GetBlockNumber() int64 {
 	return e.BlockNumber
 }
+
+//ContractHistoryEventCompleteStateChange all history event complete after first startup
+type ContractHistoryEventCompleteStateChange struct {
+	BlockNumber int64
+}
+
+//GetBlockNumber return when this event occur
+func (e *ContractHistoryEventCompleteStateChange) GetBlockNumber() int64 {
+	return e.BlockNumber
+}
+
 func init() {
 	gob.Register(&ActionInitInitiatorStateChange{})
 	gob.Register(&ActionInitMediatorStateChange{})

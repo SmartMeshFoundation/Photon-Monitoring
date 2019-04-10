@@ -73,6 +73,7 @@ type Events struct {
 	pollPeriod          time.Duration      // 轮询周期,必须与公链出块间隔一致
 	stopChan            chan int           // has stopped?
 	txDone              map[eventID]uint64 // 该map记录最近30块内处理的events流水,用于事件去重
+	firstStart          bool               //保证ContractHistoryEventCompleteStateChange 只会发送一次
 }
 
 //NewBlockChainEvents create BlockChainEvents
@@ -82,6 +83,7 @@ func NewBlockChainEvents(client *helper.SafeEthClient, rpcModuleDependency RPCMo
 		rpcModuleDependency: rpcModuleDependency,
 		client:              client,
 		txDone:              make(map[eventID]uint64),
+		firstStart:          true,
 	}
 	return be
 }
@@ -138,6 +140,9 @@ func (be *Events) startAlarmTask() {
 			if params.ChainID.Int64() == params.TestPrivateChainID {
 				be.pollPeriod = params.DefaultEthRPCPollPeriodForTest
 				logPeriod = 10
+			} else if params.ChainID.Int64() == params.TestPrivateChainID2 {
+				be.pollPeriod = params.DefaultEthRPCPollPeriodForTest / 10
+				logPeriod = 1000
 			} else {
 				be.pollPeriod = params.DefaultEthRPCPollPeriod
 			}
@@ -204,7 +209,13 @@ func (be *Events) startAlarmTask() {
 		for _, sc := range stateChanges {
 			be.StateChangeChannel <- sc
 		}
-
+		if be.firstStart {
+			be.firstStart = false
+			//通知photon,历史消息处理完毕,可以进行后续启动了.
+			be.StateChangeChannel <- &mediatedtransfer.ContractHistoryEventCompleteStateChange{
+				BlockNumber: currentBlock,
+			}
+		}
 		// 清除过期流水
 		for key, blockNumber := range be.txDone {
 			if blockNumber <= uint64(fromBlockNumber) {
@@ -277,7 +288,7 @@ func (be *Events) parseLogsToEvents(logs []types.Log) (stateChanges []mediatedtr
 			log.Info(fmt.Sprintf("event %s tx=%s happened at %d, confirmed at %d", eventName, l.TxHash.String(), l.BlockNumber, be.lastBlockNumber))
 		}
 		// registry secret事件延迟确认,否则在出现恶意分叉的情况下,中间节点有损失资金的风险
-		if eventName == params.NameSecretRevealed {
+		if eventName == params.NameSecretRevealed && params.EnableForkConfirm {
 			if be.lastBlockNumber-int64(l.BlockNumber) < params.ForkConfirmNumber {
 				continue
 			}
