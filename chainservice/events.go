@@ -574,6 +574,7 @@ func (ce *ChainEvents) doPunish(p *models.Punish, d *models.Delegate) error {
 //VerifyDelegate verify delegate from app is valid or not,should be thread safe
 func (ce *ChainEvents) VerifyDelegate(c *models.ChannelFor3rd, delegater common.Address) error {
 	partner := c.PartnerAddress
+	haveValidData := false
 	if c.UpdateTransfer.Nonce > 0 {
 		closingAddr, err := verifyClosingSignature(c)
 		if err != nil {
@@ -591,12 +592,25 @@ func (ce *ChainEvents) VerifyDelegate(c *models.ChannelFor3rd, delegater common.
 		if err != nil {
 			return err
 		}
-	} else {
-		if len(c.Punishes) > 0 {
-			err := ce.verifyPunishes(c)
+		haveValidData = true
+	}
+	if len(c.Punishes) > 0 {
+		err := ce.verifyPunishes(c)
+		if err != nil {
 			return err
 		}
-		return fmt.Errorf("no punishes and balance proof")
+		haveValidData = true
+	}
+	if len(c.AnnouceDisposed) > 0 {
+		for _, a := range c.AnnouceDisposed {
+			if a == nil || a.LockSecretHash == utils.EmptyHash {
+				return fmt.Errorf("AnnouceDisposed error, AnnouceDisposed must be valid")
+			}
+		}
+		haveValidData = true
+	}
+	if !haveValidData {
+		return fmt.Errorf("invalid delegate,it's empty")
 	}
 	return nil
 }
