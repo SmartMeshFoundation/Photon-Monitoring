@@ -150,10 +150,23 @@ func (ce *ChainEvents) handleClosedStateChange(st2 *mediatedtransfer.ContractClo
 				代理惩罚部分统一在通道 settle time out 以后进行,避免和真正的参与方发生冲突.
 			*/
 			d.SettleBlockNumber = int64(settleBlockNumber)
-			if len(d.Content.Punishes) > 0 {
+			if true { //就算是当前委托中没有punish和unlock,但是后续也有可能添加,最糟糕不过是都做一点无用功而已
 				err = ce.db.DelegateMonitorAdd(d.SettleBlockNumber, d.Key)
-				ce.db.DelegateSave(d)
+				/*
+					PMS在RevealTimeout时进行updateBalanceProof
+					主要基于如下考虑:
+					1. 避免PMS和photon自身balanceProof提交产生的冲突问题
+					2. 在主链上RevealTimeout非常长,足够应付各种情况.
+					3. 如果photon保持无网到RevealTimeout这么久,出现安全问题,photon自己担责.
+				*/
+				err = ce.db.DelegateMonitorAdd(d.SettleBlockNumber-int64(params.RevealTimeout), d.Key)
+				if err != nil {
+					log.Error(fmt.Sprintf("DelegateMonitorAdd punish err %s", err))
+				}
+
 			}
+			//无论有没有punish都要更新d,否则settle blocknumber会是错的
+			ce.db.DelegateSave(d)
 			//只有 punish, 没有 BalanceProof 的委托也是允许的
 			if d.Content.UpdateTransfer.Nonce > 0 {
 				/*
@@ -164,27 +177,10 @@ func (ce *ChainEvents) handleClosedStateChange(st2 *mediatedtransfer.ContractClo
 					d.Status = models.DelegateStatusSuccessFinishedByOther
 					d.Error = "delegator closed channel"
 					ce.db.DelegateSave(d)
-					//虽然App可能是自己主动关闭通道,但是它持有的锁仍然要保证安全
-					if len(d.Content.Unlocks) > 0 {
-						err = ce.db.DelegateMonitorAdd(d.SettleBlockNumber-int64(params.RevealTimeout), d.Key)
-						ce.db.DelegateSave(d)
-					}
 					continue
 				}
-				/*
-					PMS在RevealTimeout时进行updateBalanceProof
-					主要基于如下考虑:
-					1. 避免PMS和photon自身balanceProof提交产生的冲突问题
-					2. 在主链上RevealTimeout非常长,足够应付各种情况.
-					3. 如果photon保持无网到RevealTimeout这么久,出现安全问题,photon自己担责.
-				*/
-				blockNumber := settleBlockNumber - uint64(params.RevealTimeout)
-				err = ce.db.DelegateMonitorAdd(int64(blockNumber), d.Key)
-				if err != nil {
-					log.Error(fmt.Sprintf("DelegateMonitorAdd err %s", err))
-				}
 				//持有的锁会在updateBalanceProof的同时进行解锁.无需专门添加时间.
-				log.Info(fmt.Sprintf("%s will updatedTransfer @ %d,closedBlock=%d", d.Key, blockNumber, st2.ClosedBlock))
+				log.Info(fmt.Sprintf("%s will updatedTransfer @ %d,closedBlock=%d", utils.Pex(d.Key), settleBlockNumber-uint64(params.RevealTimeout), st2.ClosedBlock))
 			}
 		}
 	}
@@ -194,7 +190,7 @@ func (ce *ChainEvents) handleClosedStateChange(st2 *mediatedtransfer.ContractClo
 func (ce *ChainEvents) handleBalanceProofUpdatedStateChange(st2 *mediatedtransfer.ContractBalanceProofUpdatedStateChange) {
 	log.Info(fmt.Sprintf("recevie transfer update %s %s", st2.ChannelIdentifier.String(), st2.Participant.String()))
 	d := ce.db.DelegatetGet(st2.ChannelIdentifier, st2.Participant)
-	if d.Status == models.DelegateStatusInit {
+	if d.Content.OpenBlockNumber > 0 && d.Status == models.DelegateStatusInit {
 		//have recevied delegate
 		d.Status = models.DelegateStatusSuccessFinishedByOther
 		ce.db.DelegateSave(d)
@@ -311,10 +307,8 @@ func (ce *ChainEvents) handleBlockNumber(n int64) {
 			//发生在通道可以 settle 时,说明是留给 punish的
 			if d.SettleBlockNumber == n {
 				go ce.doPunishes(d)
-				//RevealTimeout是专门留给unlock用的
+				//RevealTimeout是专门留给unlock以及updatebalanceProof用
 			} else if d.SettleBlockNumber-int64(params.RevealTimeout) == n {
-				go ce.doUnlocks(d)
-			} else {
 				if d.Status == models.DelegateStatusSuccessFinishedByOther {
 					log.Info(fmt.Sprintf("handle delegate ,but it's status=%d, delegate=%s", d.Status, utils.StringInterface(d, 4)))
 					//无论委托人是关闭方还是因为用户自己做了updateBalanceProof,解锁都会重新做一遍,大不了都失败而已.
@@ -378,6 +372,8 @@ func (ce *ChainEvents) updateTransfer(d *models.Delegate) {
 		d.Error = err.Error()
 		ce.db.DelegateSave(d)
 	} else {
+		log.Info(fmt.Sprintf("doUpdateTransfer for %s success on channel %s",
+			d.Address.String(), d.Content.ChannelIdentifier.String()))
 		err = ce.db.AccountUseSmt(addr, params.SmtUpdateTransfer)
 		if err != nil {
 			log.Error(fmt.Sprintf("AccountUseSmt err %s", err))
@@ -409,9 +405,9 @@ func (ce *ChainEvents) doUnlocks(d *models.Delegate) error {
 		return err
 	}
 	for _, w := range d.Content.Unlocks {
-		log.Debug("try to unlock for %s on %s,lock=%", utils.APex2(d.Address),
+		log.Debug(fmt.Sprintf("try to unlock for %s on %s,lock=%", utils.APex2(d.Address),
 			utils.HPex(d.Content.ChannelIdentifier), utils.HPex(w.Lock.LockSecretHash), w.Lock.Amount,
-		)
+		))
 		shouldGiveup := false
 		lockSecretHash := w.Lock.LockSecretHash
 		for _, a := range d.Content.AnnouceDisposed {
@@ -425,7 +421,7 @@ func (ce *ChainEvents) doUnlocks(d *models.Delegate) error {
 		}
 		err := ce.doUnlock(w, d.PartnerAddress, d.Address, d.TokenAddress, common.BytesToHash(d.ChannelIdentifier), d.Content.UpdateTransfer.TransferAmount)
 		if err != nil {
-			log.Error(fmt.Sprintf("doUnlock %s %s err %s", d.Key, w.Lock.LockSecretHash, err))
+			log.Error(fmt.Sprintf("doUnlock %s %s err %s", utils.Pex(d.Key), w.Lock.LockSecretHash.String(), err))
 			hasErr = true
 			w.TxStatus = models.TxStatusExecueteErrorFinished
 			w.TxError = err.Error()
@@ -434,6 +430,9 @@ func (ce *ChainEvents) doUnlocks(d *models.Delegate) error {
 				log.Error(fmt.Sprintf("AccountUnlockSmt err %s", err))
 			}
 		} else {
+			log.Info(fmt.Sprintf("doUnlocks success for %s on lock %s",
+				d.Address.String(), w.Lock.String(),
+			))
 			w.TxStatus = models.TxStatusExecuteSuccessFinished
 			err2 := ce.db.AccountUseSmt(d.Address, params.SmtUnlock)
 			if err2 != nil {
@@ -481,6 +480,7 @@ func (ce *ChainEvents) doPunishes(d *models.Delegate) error {
 				log.Error(fmt.Sprintf("account unlock smt error %s", err))
 			}
 		} else {
+			log.Info(fmt.Sprintf("doPunish success for %s on punish %s", d.Address.String(), p.LockHash.String()))
 			hasSuccess = true
 			p.TxStatus = models.TxStatusExecuteSuccessFinished
 			err2 := ce.db.AccountUseSmt(d.Address, params.SmtPunish)
@@ -496,7 +496,7 @@ func (ce *ChainEvents) doPunishes(d *models.Delegate) error {
 func (ce *ChainEvents) doUpdateTransfer(d *models.Delegate) error {
 	channelAddr := common.BytesToHash(d.ChannelIdentifier)
 	log.Info(fmt.Sprintf("UpdateTransfer %s called ,updateTransfer=%s",
-		d.ChannelIdentifier, utils.StringInterface(d.Content.UpdateTransfer, 3)))
+		utils.Pex(d.ChannelIdentifier), utils.StringInterface(d.Content.UpdateTransfer, 3)))
 	tokenNetwork, err := ce.bcs.TokenNetwork(d.TokenAddress)
 	if err != nil {
 		return err
@@ -524,33 +524,34 @@ func (ce *ChainEvents) doUpdateTransfer(d *models.Delegate) error {
 
 }
 func (ce *ChainEvents) doUnlock(w *models.Unlock, participant, partner, tokenAddress common.Address, channelAddr common.Hash, transferAmount *big.Int) error {
-	log.Info(fmt.Sprintf("unlock %s on %s for %s", w.Lock.LockSecretHash, utils.HPex(channelAddr), utils.APex(participant)))
+	log.Info(fmt.Sprintf("unlock %s on %s for %s", w.Lock.LockSecretHash.String(), utils.HPex(channelAddr), utils.APex(participant)))
 	tokenNetwork, err := ce.bcs.TokenNetwork(tokenAddress)
 	if err != nil {
 		return err
 	}
 	lock := w.Lock
-	if lock.Expiration <= ce.GetBlockNumber() {
-		return fmt.Errorf("lock has expired, expration=%d,currentBlockNumber=%d", lock.Expiration, ce.GetBlockNumber())
-	}
+	//不需要检测,密码必须在链上注册才有可能成功,
+	//if lock.Expiration <= ce.GetBlockNumber() {
+	//	return fmt.Errorf("lock has expired, expration=%d,currentBlockNumber=%d", lock.Expiration, ce.GetBlockNumber())
+	//}
 	tx, err := tokenNetwork.GetContract().UnlockDelegate(ce.bcs.Auth, tokenAddress, partner, participant, transferAmount, big.NewInt(lock.Expiration), lock.Amount, lock.LockSecretHash, w.MerkleProof, w.Signature)
 	if err != nil {
-		return fmt.Errorf("withdraw failed %s on channel %s,lock=%s", err, utils.HPex(channelAddr), utils.StringInterface(lock, 3))
+		return fmt.Errorf("unlock failed %s on channel %s,lock=%s", err, utils.HPex(channelAddr), utils.StringInterface(lock, 3))
 	}
 	w.TxHash = tx.Hash()
 	txReceipt, err := bind.WaitMined(rpc.GetCallContext(), ce.bcs.Client, tx)
 	if err != nil {
-		return fmt.Errorf("%s WithDraw failed with error:%s", w.Lock.LockSecretHash, err)
+		return fmt.Errorf("%s unlock failed with error:%s", w.Lock.LockSecretHash, err)
 	}
 	if txReceipt.Status != types.ReceiptStatusSuccessful {
-		return fmt.Errorf("withdraw failed %s,receipt=%s", utils.HPex(channelAddr), utils.StringInterface(txReceipt.Status, 3))
+		return fmt.Errorf("unlock failed %s,receipt=%s", utils.HPex(channelAddr), utils.StringInterface(txReceipt.Status, 3))
 	}
-	log.Info(fmt.Sprintf("withdraw success %s ", utils.HPex(channelAddr)))
+	log.Info(fmt.Sprintf("unlock success %s ", utils.HPex(channelAddr)))
 	return nil
 }
 
 func (ce *ChainEvents) doPunish(p *models.Punish, d *models.Delegate) error {
-	log.Info(fmt.Sprintf("punish %s on lockhash %s for channel %s", d.PartnerAddress, p.LockHash.String(), utils.BPex(d.ChannelIdentifier)))
+	log.Info(fmt.Sprintf("punish %s on lockhash %s for channel %s", d.PartnerAddress.String(), p.LockHash.String(), utils.BPex(d.ChannelIdentifier)))
 	tokenNetwork, err := ce.bcs.TokenNetwork(d.TokenAddress)
 	if err != nil {
 		return err
@@ -572,6 +573,7 @@ func (ce *ChainEvents) doPunish(p *models.Punish, d *models.Delegate) error {
 }
 
 //VerifyDelegate verify delegate from app is valid or not,should be thread safe
+//todo 为了解决用户进行委托的时候通道已经关闭的问题,这里对c做了修改,后续应该重构解决这个问题
 func (ce *ChainEvents) VerifyDelegate(c *models.ChannelFor3rd, delegater common.Address) error {
 	partner := c.PartnerAddress
 	haveValidData := false
@@ -579,7 +581,7 @@ func (ce *ChainEvents) VerifyDelegate(c *models.ChannelFor3rd, delegater common.
 	if err != nil {
 		return err
 	}
-	_, openBlockNumber, _, _, err := tokenNetwork.GetContract().GetChannelInfoByChannelIdentifier(nil, c.ChannelIdentifier)
+	settleBlockNumber, openBlockNumber, _, _, err := tokenNetwork.GetContract().GetChannelInfoByChannelIdentifier(nil, c.ChannelIdentifier)
 	if err != nil {
 		return fmt.Errorf("channel %s get channel info err %s", c.ChannelIdentifier.String(), err)
 	}
@@ -626,6 +628,7 @@ func (ce *ChainEvents) VerifyDelegate(c *models.ChannelFor3rd, delegater common.
 	if !haveValidData {
 		return fmt.Errorf("invalid delegate,it's empty")
 	}
+	c.SetSettleBlockNumber(int64(settleBlockNumber))
 	return nil
 }
 func (ce *ChainEvents) verifyUnlocks(c *models.ChannelFor3rd, delegater common.Address) error {
