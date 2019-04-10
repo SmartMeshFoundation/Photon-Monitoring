@@ -1,7 +1,10 @@
 package models
 
 import (
+	"math/big"
 	"testing"
+
+	"github.com/SmartMeshFoundation/Photon/transfer/mtree"
 
 	"github.com/SmartMeshFoundation/Photon-Monitoring/params"
 
@@ -92,7 +95,10 @@ func TestModelDB_DelegateNewDelegateWithPunishes(t *testing.T) {
 	ast.Nil(err)
 	c.Unlocks = []*Unlock{
 		{
-			SecretHash: utils.NewRandomHash(),
+			Lock: &mtree.Lock{
+				LockSecretHash: utils.NewRandomHash(),
+				Amount:         big.NewInt(30),
+			},
 		},
 	}
 	c.Punishes = []*Punish{
