@@ -105,6 +105,12 @@ type ChannelFor3rd struct {
 	Unlocks           []*Unlock          `json:"unlocks"`
 	Punishes          []*Punish          `json:"punishes"`
 	AnnouceDisposed   []*AnnouceDisposed `json:"annouce_disposed"`
+	settleBlockNumber int64              //for internal use,
+}
+
+//SetSettleBlockNumber 设置blockNumber,主要用于解决用户委托的时候通道已经关闭的情形.
+func (c *ChannelFor3rd) SetSettleBlockNumber(blockNumber int64) {
+	c.settleBlockNumber = blockNumber
 }
 
 //todo punish和AnnouceDisposed可能会很多,运行一段时间以后很容易累积成百上千,甚至更多,因此这种直接保存在结构体中的并不合适,
@@ -191,7 +197,7 @@ func (model *ModelDB) DelegateNewOrUpdateDelegate(c *ChannelFor3rd, addr common.
 	if !params.DebugMode && d.Status == DelegateStatusInit && d.Content.UpdateTransfer.Nonce > c.UpdateTransfer.Nonce {
 		return fmt.Errorf("only delegate newer nonce ,old nonce=%d,new=%d", d.Content.UpdateTransfer.Nonce, c.UpdateTransfer.Nonce)
 	}
-	if d.Status != DelegateStatusInit {
+	if d.Content.OpenBlockNumber > 0 && d.Status != DelegateStatusInit {
 		log.Warn(fmt.Sprintf("old delegate will be replaced, a channle was settled and re create? d=\n%s", utils.StringInterface(d, 4)))
 	}
 	newsmt = CalcNeedSmtForThisChannel(c)
@@ -231,12 +237,27 @@ func (model *ModelDB) DelegateNewOrUpdateDelegate(c *ChannelFor3rd, addr common.
 		panic(fmt.Sprintf("db err %s", err))
 	}
 	model.lock.Unlock()
+	//检测是否是通道关闭以后的初次委托,
+	if d.SettleBlockNumber == 0 && c.settleBlockNumber > 0 {
+		d.SettleBlockNumber = c.settleBlockNumber
+		//如果是初次委托,那么就需要添加相应的动作时间
+		err = model.DelegateMonitorAdd(d.SettleBlockNumber, d.Key)
+		if err != nil {
+			panic(fmt.Sprintf("db err %s", err))
+		}
+		err = model.DelegateMonitorAdd(d.SettleBlockNumber-int64(params.RevealTimeout), d.Key)
+		if err != nil {
+			panic(fmt.Sprintf("db err %s", err))
+		}
+	}
+	//保存delegate
 	err = model.db.Save(d)
 	if err != nil {
 		if err != nil {
 			panic(fmt.Sprintf("db err %s", err))
 		}
 	}
+
 	return nil
 }
 
