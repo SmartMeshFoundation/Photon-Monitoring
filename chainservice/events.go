@@ -3,6 +3,7 @@ package chainservice
 import (
 	"crypto/ecdsa"
 	"errors"
+	"github.com/SmartMeshFoundation/Photon/notify"
 	"math/big"
 
 	"github.com/SmartMeshFoundation/Photon/transfer"
@@ -50,17 +51,17 @@ type ChainEvents struct {
 //NewChainEvents create chain events
 func NewChainEvents(key *ecdsa.PrivateKey, client *helper.SafeEthClient, tokenNetworkRegistryAddress common.Address, db *models.ModelDB) *ChainEvents {
 	log.Trace(fmt.Sprintf("tokenNetworkRegistryAddress %s", tokenNetworkRegistryAddress.String()))
-	bcs, err := rpc.NewBlockChainService(key, tokenNetworkRegistryAddress, client)
+	bcs, err := rpc.NewBlockChainService(key, tokenNetworkRegistryAddress, client,&notify.Handler{},&mockTxInfoDao{})
 	if err != nil {
 		panic(err)
 	}
-	registry := bcs.Registry(tokenNetworkRegistryAddress, true)
-	if registry == nil {
+	_,err = bcs.Registry(tokenNetworkRegistryAddress, true)
+	if err != nil {
 		panic("startup error : cannot get registry")
 	}
 	return &ChainEvents{
 		client:          client,
-		be:              blockchain.NewBlockChainEvents(client, bcs),
+		be:              blockchain.NewBlockChainEvents(client, bcs,&mockChainEventRecordDao{}),
 		bcs:             bcs,
 		key:             key,
 		db:              db,
