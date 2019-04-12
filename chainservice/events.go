@@ -292,6 +292,8 @@ func (ce *ChainEvents) handleStateChange(st transfer.StateChange) {
 	case *mediatedtransfer.ContractTokenAddedStateChange:
 		ce.handleTokenAddedStateChange(st2)
 		//punish不是在收到unlock的时候发生,而是在通道可以settle的时候发生,
+		//default:
+		//	log.Trace(fmt.Sprintf("receive state change: %s", utils.StringInterface(st2, 3)))
 	}
 }
 func (ce *ChainEvents) handleBlockNumber(n int64) {
@@ -400,13 +402,13 @@ func (ce *ChainEvents) doUnlocks(d *models.Delegate) error {
 	err := ce.db.AccountLockSmt(d.Address, needsmt)
 	if err != nil {
 		d.Status = models.DelegateStatusFailed
-		d.Error = fmt.Sprintf("smt not enough for unlock", err)
+		d.Error = fmt.Sprintf("smt not enough for unlock %s", err)
 		ce.db.DelegateSave(d)
 		return err
 	}
 	for _, w := range d.Content.Unlocks {
-		log.Debug(fmt.Sprintf("try to unlock for %s on %s,lock=%", utils.APex2(d.Address),
-			utils.HPex(d.Content.ChannelIdentifier), utils.HPex(w.Lock.LockSecretHash), w.Lock.Amount,
+		log.Debug(fmt.Sprintf("try to unlock for %s on %s,lock=%s", utils.APex2(d.Address),
+			utils.HPex(d.Content.ChannelIdentifier), utils.HPex(w.Lock.LockSecretHash),
 		))
 		shouldGiveup := false
 		lockSecretHash := w.Lock.LockSecretHash
@@ -419,7 +421,7 @@ func (ce *ChainEvents) doUnlocks(d *models.Delegate) error {
 		if shouldGiveup {
 			continue
 		}
-		err := ce.doUnlock(w, d.PartnerAddress, d.Address, d.TokenAddress, common.BytesToHash(d.ChannelIdentifier), d.Content.UpdateTransfer.TransferAmount)
+		err := ce.doUnlock(w, d.Address, d.PartnerAddress, d.TokenAddress, common.BytesToHash(d.ChannelIdentifier), d.Content.UpdateTransfer.TransferAmount)
 		if err != nil {
 			log.Error(fmt.Sprintf("doUnlock %s %s err %s", utils.Pex(d.Key), w.Lock.LockSecretHash.String(), err))
 			hasErr = true
@@ -662,7 +664,7 @@ func (ce *ChainEvents) verifyUnlockSignature(u *models.Unlock, c *models.Channel
 	buf := new(bytes.Buffer)
 	_, err = buf.Write(smparams.ContractSignaturePrefix)
 	_, err = buf.Write([]byte(smparams.ContractUnlockDelegateProofMessageLength))
-	_, err = buf.Write(utils.BigIntTo32Bytes(c.UpdateTransfer.TransferAmount))
+	//_, err = buf.Write(utils.BigIntTo32Bytes(c.UpdateTransfer.TransferAmount))
 	_, err = buf.Write(ce.bcs.NodeAddress[:])
 	_, err = buf.Write(utils.BigIntTo32Bytes(big.NewInt(u.Lock.Expiration)))
 	_, err = buf.Write(utils.BigIntTo32Bytes(u.Lock.Amount))
