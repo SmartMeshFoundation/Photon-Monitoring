@@ -113,9 +113,8 @@ func (c *ChannelFor3rd) SetSettleBlockNumber(blockNumber int64) {
 	c.settleBlockNumber = blockNumber
 }
 
-//todo punish和AnnouceDisposed可能会很多,运行一段时间以后很容易累积成百上千,甚至更多,因此这种直接保存在结构体中的并不合适,
-//需要择机重构.
 //Punish 需要委托给第三方的 punish证据
+//todo punish和AnnouceDisposed可能会很多,运行一段时间以后很容易累积成百上千,甚至更多,因此这种直接保存在结构体中的并不合适,
 type Punish struct {
 	LockHash       common.Hash `json:"lock_hash"` //the whole lock's hash,not lock secret hash
 	AdditionalHash common.Hash `json:"additional_hash"`
@@ -125,8 +124,9 @@ type Punish struct {
 	TxHash         common.Hash
 }
 
+//AnnouceDisposed 确保unlock的时候不要去unlock那些声明放弃的锁
 type AnnouceDisposed struct {
-	LockSecretHash common.Hash `json:secret_hash`
+	LockSecretHash common.Hash `json:"secret_hash"`
 }
 
 //DelegateDeleteDelegate move delegate from bucket[Delegate] to bucket[RemovedDelegate]
