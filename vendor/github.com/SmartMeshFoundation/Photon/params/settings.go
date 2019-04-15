@@ -26,7 +26,9 @@ const defaultProtocolThrottleFillRate = 10.
 const defaultprotocolRetryInterval = 1.
 
 //DefaultRevealTimeout blocks needs to update transfer
-var DefaultRevealTimeout = 10
+//this time is used for a participant to register secret on chain
+// and unlock the lock if need.
+var DefaultRevealTimeout = 30
 
 //DefaultSettleTimeout settle time of channel
 const DefaultSettleTimeout = 600
@@ -46,20 +48,6 @@ const DefaultTxTimeout = 5 * time.Minute //15seconds for one block,it may take s
 const MaxRequestTimeout = 20 * time.Minute //longest time for a request ,for example ,settle all channles?
 
 var gasLimitHex string
-
-//SpectrumTestNetRegistryAddress Registry contract address
-var SpectrumTestNetRegistryAddress = common.HexToAddress("0x52d7167FAD53835a2356C7A872BfbC17C03aD758")
-
-//ChannelSettleTimeoutMin min settle timeout
-const ChannelSettleTimeoutMin = 6
-
-/*
-ChannelSettleTimeoutMax The maximum settle timeout is chosen as something above
- 1 year with the assumption of very fast block times of 12 seconds.
- There is a maximum to avoidpotential overflows as described here:
- https://github.com/Photon/photon/issues/1038
-*/
-const ChannelSettleTimeoutMax = 2700000
 
 //UDPMaxMessageSize message size
 const UDPMaxMessageSize = 1200
@@ -124,11 +112,14 @@ var DefaultChainID = big.NewInt(0)
 //ChainID of this tokenNetwork
 var ChainID = DefaultChainID
 
+//PunishBlockNumber is punish_block_number of contract,default is 257
+var PunishBlockNumber int64
+
 //MatrixServerConfig matrix server config
 var MatrixServerConfig = map[string]string{
 	"transport01.smartmesh.cn": "http://transport01.smartmesh.cn:8008",
-	"transport02.smartmesh.cn": "http://transport02.smartmesh.cn:8008",
-	"transport03.smartmesh.cn": "http://transport03.smartmesh.cn:8008",
+	//"transport02.smartmesh.cn": "http://transport02.smartmesh.cn:8008",
+	"transport13.smartmesh.cn": "http://transport13.smartmesh.cn:8008",
 }
 
 //AliasFragment  is discovery AliasFragment
@@ -140,32 +131,35 @@ const DiscoveryServer = "transport01.smartmesh.cn"
 //NETWORKNAME Specify the network name of the Ethereum network to run Photon on
 var NETWORKNAME = "ropsten"
 
+// MainNetGenesisBlockHash 主网即spectrum创世区块hash
+var MainNetGenesisBlockHash = common.HexToHash("0x57e682b80257aad73c4f3ad98d20435b4e1644d8762ef1ea1ff2806c27a5fa3d")
+
 //GenesisBlockHashToDefaultRegistryAddress :
 var GenesisBlockHashToDefaultRegistryAddress = map[common.Hash]common.Address{
 	// spectrum
-	common.HexToHash("0x57e682b80257aad73c4f3ad98d20435b4e1644d8762ef1ea1ff2806c27a5fa3d"): common.HexToAddress("0x28233F8e0f8Bd049382077c6eC78bE9c2915c7D4"),
+	common.HexToHash("0x57e682b80257aad73c4f3ad98d20435b4e1644d8762ef1ea1ff2806c27a5fa3d"): common.HexToAddress("0x08b7d79ec4ebd53e5b89c7c062cc64bb09d063e3"),
 	// spectrum test net
-	common.HexToHash("0xd011e2cc7f241996a074e2c48307df3971f5f1fe9e1f00cfa704791465d5efc3"): common.HexToAddress("0xa2150A4647908ab8D0135F1c4BFBB723495e8d12"),
+	common.HexToHash("0xd011e2cc7f241996a074e2c48307df3971f5f1fe9e1f00cfa704791465d5efc3"): common.HexToAddress("0xc479184abeb8c508ee96e4c093ee47af2256cbbf"),
 	// ethereum
 	common.HexToHash("0x88e96d4537bea4d9c05d12549907b32561d3bf31f45aae734cdc119f13406cb6"): utils.EmptyAddress,
 	// ethereum test net
 	common.HexToHash("0x41800b5c3f1717687d85fc9018faac0a6e90b39deaa0b99e7fe4fe796ddeb26a"): utils.EmptyAddress,
 	// ethereum private
-	common.HexToHash("0x38a88a9ddffe522df5c07585a7953f8c011c94327a494188bd0cc2410dc40a1a"): common.HexToAddress("0x56d05806656D3Ea8F2142a2FF2eA6dFE5D625254"),
+	common.HexToHash("0x38a88a9ddffe522df5c07585a7953f8c011c94327a494188bd0cc2410dc40a1a"): common.HexToAddress("0x2907b8bf0fF92dA818E2905fB5218b1A8323Ffb4"),
 }
 
 //GenesisBlockHashToPFS : default pfs provider
-var GenesisBlockHashToPFS = map[common.Hash]string{
+var GenesisBlockHashToPFS = map[common.Address]string{
 	// spectrum
-	common.HexToHash("0x57e682b80257aad73c4f3ad98d20435b4e1644d8762ef1ea1ff2806c27a5fa3d"): "http://transport01.smartmesh.cn:7000",
+	common.HexToAddress("0x08b7d79ec4ebd53e5b89c7c062cc64bb09d063e3"): "http://transport01.smartmesh.cn:7000",
 	// spectrum test net
-	common.HexToHash("0xd011e2cc7f241996a074e2c48307df3971f5f1fe9e1f00cfa704791465d5efc3"): "http://transport01.smartmesh.cn:7001",
+	common.HexToAddress("0xc479184abeb8c508ee96e4c093ee47af2256cbbf"): "http://transport01.smartmesh.cn:7001",
 	// ethereum
-	common.HexToHash("0x88e96d4537bea4d9c05d12549907b32561d3bf31f45aae734cdc119f13406cb6"): "",
+	//common.HexToHash("0x88e96d4537bea4d9c05d12549907b32561d3bf31f45aae734cdc119f13406cb6"): "",
 	// ethereum test net
-	common.HexToHash("0x41800b5c3f1717687d85fc9018faac0a6e90b39deaa0b99e7fe4fe796ddeb26a"): "",
+	//common.HexToHash("0x41800b5c3f1717687d85fc9018faac0a6e90b39deaa0b99e7fe4fe796ddeb26a"): "",
 	// ethereum private
-	common.HexToHash("0x38a88a9ddffe522df5c07585a7953f8c011c94327a494188bd0cc2410dc40a1a"): "http://transport01.smartmesh.cn:7002",
+	common.HexToAddress("0x2907b8bf0fF92dA818E2905fB5218b1A8323Ffb4"): "http://transport01.smartmesh.cn:7002",
 }
 
 // DefaultEthRPCPollPeriodForTest :
@@ -194,3 +188,44 @@ var ForkConfirmNumber int64 = 17
 
 // MaxTransferDataLen : 交易附件信息最大长度
 var MaxTransferDataLen = 256
+
+// SMTTokenName SMTToken名,固定
+const SMTTokenName = "SMTToken"
+
+// DefaultMDNSKeepalive 默认mdns下20秒内检测不到在线,将该节点标志为下线
+var DefaultMDNSKeepalive = 20 * time.Second
+
+//DefaultMDNSQueryInterval  默认轮询间隔是1s,在测试代码中会更改他,以提高效率
+var DefaultMDNSQueryInterval = time.Second
+
+//EnableMDNS 是否启用mdns
+var EnableMDNS = true
+
+// BlockPeriodSecondsForTest 测试链,1秒出块间隔
+var BlockPeriodSecondsForTest = 1
+
+// BlockPeriodSecondsForTest2 自动化测试链,50毫秒出块间隔
+var BlockPeriodSecondsForTest2 float32 = 0.05
+
+// BlockPeriodSeconds spectrum或ethereum,15秒出块间隔
+var BlockPeriodSeconds = 15
+
+// IsMainNet 是否为主网
+var IsMainNet = false
+
+//MainNetChannelSettleTimeoutMin min settle timeout of main net,主网按一周计算,14秒一块
+const MainNetChannelSettleTimeoutMin = 43200
+
+//TestNetChannelSettleTimeoutMin min settle timeout of main net,测试网60块
+const TestNetChannelSettleTimeoutMin = 60
+
+/*
+ChannelSettleTimeoutMax The maximum settle timeout is chosen as something above
+ 1 year with the assumption of very fast block times of 12 seconds.
+ There is a maximum to avoidpotential overflows as described here:
+ https://github.com/Photon/photon/issues/1038
+*/
+const ChannelSettleTimeoutMax = 2700000
+
+// ContractPunishBlockNumber 合约上设置的专门留给punish的块
+const ContractPunishBlockNumber uint64 = 257

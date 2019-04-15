@@ -1,10 +1,7 @@
 package channel
 
 import (
-	"errors"
-
 	"fmt"
-
 	"math/big"
 
 	"github.com/SmartMeshFoundation/Photon/channel/channeltype"
@@ -12,6 +9,7 @@ import (
 	"github.com/SmartMeshFoundation/Photon/log"
 	"github.com/SmartMeshFoundation/Photon/network/rpc/contracts"
 	"github.com/SmartMeshFoundation/Photon/network/rpc/fee"
+	"github.com/SmartMeshFoundation/Photon/params"
 	"github.com/SmartMeshFoundation/Photon/rerr"
 	"github.com/SmartMeshFoundation/Photon/transfer"
 	"github.com/SmartMeshFoundation/Photon/transfer/mtree"
@@ -33,6 +31,7 @@ type Channel struct {
 	SettleTimeout     int
 	feeCharger        fee.Charger //calc fee for each transfer?
 	State             channeltype.State
+	DelegateState     channeltype.ChannelDelegateState
 }
 
 /*
@@ -43,11 +42,11 @@ settleTimeout must be valid, it cannot too small.
 func NewChannel(ourState, partnerState *EndState, externState *ExternalState, tokenAddr common.Address, channelIdentifier *contracts.ChannelUniqueID,
 	revealTimeout, settleTimeout int) (c *Channel, err error) {
 	if settleTimeout <= revealTimeout {
-		err = fmt.Errorf("reveal_timeout can not be larger-or-equal to settle_timeout, reveal_timeout=%d,settle_timeout=%d", revealTimeout, settleTimeout)
+		err = rerr.ErrChannelInvalidSttleTimeout.Errorf("reveal_timeout can not be larger-or-equal to settle_timeout, reveal_timeout=%d,settle_timeout=%d", revealTimeout, settleTimeout)
 		return
 	}
 	if revealTimeout < 3 {
-		err = errors.New("reveal_timeout must be at least 3")
+		err = rerr.ErrChannelRevealTimeout.Append("reveal_timeout must be at least 3")
 		return
 	}
 	c = &Channel{
@@ -58,13 +57,8 @@ func NewChannel(ourState, partnerState *EndState, externState *ExternalState, to
 		TokenAddress:      tokenAddr,
 		RevealTimeout:     revealTimeout,
 		SettleTimeout:     settleTimeout,
-		State:             channeltype.StateOpened,
-	}
-	if externState.ClosedBlock != 0 {
-		c.State = channeltype.StateClosed
-	}
-	if externState.SettledBlock != 0 {
-		c.State = channeltype.StateSettled
+		State:             channeltype.StateOpened, //如果是从数据中恢复,state会直接被修改,如果是新建的则初始状态就是open
+		DelegateState:     channeltype.ChannelDelegateStateNoNeed,
 	}
 	return
 }
@@ -82,6 +76,13 @@ transfer tokens to partner.
 */
 func (c *Channel) CanTransfer() bool {
 	return channeltype.CanTransferMap[c.State]
+}
+
+/*
+IsClosed returns true when this channel closed
+*/
+func (c *Channel) IsClosed() bool {
+	return c.State == channeltype.StateClosed
 }
 
 //CanContinueTransfer unfinished transfer can continue?
@@ -171,6 +172,21 @@ func (c *Channel) HandleBalanceProofUpdated(updatedParticipant common.Address, t
 	}
 	endStateContractUpdated.SetContractTransferAmount(transferAmount)
 	endStateContractUpdated.SetContractLocksroot(locksRoot)
+	//我updateBalanceProof以后,要进行unlock
+	//todo 这里实际上是合约的一个bug,updatedParticipant应该是对方的
+	if updatedParticipant == c.PartnerState.Address {
+		unlockProofs := c.PartnerState.GetCanUnlockOnChainLocks()
+		if len(unlockProofs) > 0 {
+			result := c.ExternState.Unlock(unlockProofs, c.PartnerState.contractTransferAmount())
+			go func() {
+				err := <-result.Result
+				if err != nil {
+					// todo need to report error to Photon user
+					log.Error(fmt.Sprintf("Unlock failed because of %s", err))
+				}
+			}()
+		}
+	}
 }
 
 /*
@@ -181,6 +197,7 @@ HandleChannelPunished 发生了 Punish 事件,意味着受益方合约上的信�
  * 		which means that information on contract of beneficiary has been changed.
  */
 func (c *Channel) HandleChannelPunished(beneficiaries common.Address) {
+	log.Trace(fmt.Sprintf("receive punish for %s,channel id=%s", beneficiaries.String(), c.ChannelIdentifier.ChannelIdentifier.String()))
 	var beneficiaryState, cheaterState *EndState
 	if beneficiaries == c.OurState.Address {
 		beneficiaryState = c.OurState
@@ -196,11 +213,12 @@ func (c *Channel) HandleChannelPunished(beneficiaries common.Address) {
 	}
 	beneficiaryState.SetContractTransferAmount(utils.BigInt0)
 	beneficiaryState.SetContractLocksroot(utils.EmptyHash)
-	beneficiaryState.SetContractNonce(0xfffffff)
+	beneficiaryState.SetContractNonce(0xffffffffffffffff)
 	beneficiaryState.ContractBalance = beneficiaryState.ContractBalance.Add(
 		beneficiaryState.ContractBalance, cheaterState.ContractBalance,
 	)
 	cheaterState.ContractBalance = new(big.Int).Set(utils.BigInt0)
+	log.Trace(fmt.Sprintf("c=%s", utils.StringInterface(c, 5)))
 }
 
 /*
@@ -238,31 +256,27 @@ func (c *Channel) HandleClosed(closingAddress common.Address, transferredAmount 
 			utils.HPex(c.ChannelIdentifier.ChannelIdentifier), endStateUpdatedOnContract.contractTransferAmount(),
 			utils.APex2(endStateUpdatedOnContract.Address), endStateUpdatedOnContract.TransferAmount(),
 		))
-		//todo 报告错误给最上层,可能是一个 bug? 一种攻击?,还是我自己存储数据有问题
-		// todo throw error to the uppermost layer, maybe a bug? an attack? or just local storage error
 	}
 	if endStateUpdatedOnContract.locksRoot() != endStateUpdatedOnContract.contractLocksRoot() {
 		log.Error(fmt.Sprintf("channel %s closed,but contract locksroot is %s, and local stored %s's locksroot is %s",
 			utils.HPex(c.ChannelIdentifier.ChannelIdentifier), utils.HPex(endStateUpdatedOnContract.contractLocksRoot()),
 			utils.APex2(endStateUpdatedOnContract.Address), utils.HPex(endStateUpdatedOnContract.locksRoot()),
 		))
-		//todo 报告错误给最上层,可能是一个 bug? 一种攻击?,还是我自己存储数据有问题
-		// todo throw error to the uppermost layer, maybe a bug? an attack? or just local storage error.
 	}
-	unlockProofs := c.PartnerState.GetKnownUnlocks()
-	if len(unlockProofs) > 0 {
-		result := c.ExternState.Unlock(unlockProofs, c.PartnerState.contractTransferAmount())
-		go func() {
-			err := <-result.Result
-			if err != nil {
-				//todo 需要回报错误给Photon 调用者
-				// todo need to report error to Photon
-				log.Info(fmt.Sprintf("Unlock failed because of %s", err))
-			}
-		}()
+	//我是通道关闭方,需要进行相应的unlock,非通道关闭方,只能在updateBalanceProof以后进行unlock
+	if closingAddress == c.OurState.Address {
+		unlockProofs := c.PartnerState.GetCanUnlockOnChainLocks()
+		if len(unlockProofs) > 0 {
+			result := c.ExternState.Unlock(unlockProofs, c.PartnerState.contractTransferAmount())
+			go func() {
+				err := <-result.Result
+				if err != nil {
+					// todo need to report error to Photon user
+					log.Error(fmt.Sprintf("Unlock failed because of %s", err))
+				}
+			}()
+		}
 	}
-
-	c.State = channeltype.StateClosed
 }
 
 /*
@@ -329,7 +343,7 @@ func (c *Channel) GetStateFor(nodeAddress common.Address) (*EndState, error) {
 	if c.PartnerState.Address == nodeAddress {
 		return c.PartnerState, nil
 	}
-	return nil, fmt.Errorf("GetStateFor Unknown address %s", nodeAddress)
+	return nil, rerr.ErrChannelNotParticipant.Errorf("GetStateFor Unknown address %s", nodeAddress)
 }
 
 /*
@@ -361,7 +375,7 @@ func (c *Channel) RegisterSecret(secret common.Hash) error {
 	ourKnown := c.OurState.IsKnown(hashlock)
 	partenerKnown := c.PartnerState.IsKnown(hashlock)
 	if !ourKnown && !partenerKnown {
-		return fmt.Errorf("secret doesn't correspond to a registered hashlock. hashlock %s token %s",
+		return rerr.ErrChannelLockSecretHashNotFound.Errorf("secret doesn't correspond to a registered hashlock. hashlock %s token %s",
 			utils.Pex(hashlock[:]), utils.HPex(c.ChannelIdentifier.ChannelIdentifier))
 	}
 	if ourKnown {
@@ -393,7 +407,7 @@ func (c *Channel) RegisterRevealedSecretHash(lockSecretHash, secret common.Hash,
 	ourKnown := c.OurState.IsKnown(lockSecretHash)
 	partenerKnown := c.PartnerState.IsKnown(lockSecretHash)
 	if !ourKnown && !partenerKnown {
-		return fmt.Errorf("LockSecretHash doesn't correspond to a registered lockSecretHash. lockSecretHash %s token %s",
+		return rerr.ErrChannelLockSecretHashNotFound.Errorf("LockSecretHash doesn't correspond to a registered lockSecretHash. lockSecretHash %s token %s",
 			utils.Pex(lockSecretHash[:]), utils.HPex(c.ChannelIdentifier.ChannelIdentifier))
 	}
 	if ourKnown {
@@ -404,8 +418,7 @@ func (c *Channel) RegisterRevealedSecretHash(lockSecretHash, secret common.Hash,
 			utils.Pex(lockSecretHash[:]), lock.Amount))
 		err := c.OurState.RegisterRevealedSecretHash(lockSecretHash, secret, blockNumber)
 		if err == nil {
-			//todo 需要发送给对方 unlock 消息,在哪里发比较合适呢? stateManager 还是这里?
-			// todo need to send his partner unlock message. Where to send? In stateManager or right in this function ?
+			//一旦注册成功,在事件处理流程中,相应的statemanager会进行处理
 		}
 		return err
 	}
@@ -440,7 +453,7 @@ func (c *Channel) RegisterTransfer(blocknumber int64, tr encoding.EnvelopMessage
 	case *encoding.RemoveExpiredHashlockTransfer:
 		err = c.RegisterRemoveExpiredHashlockTransfer(msg, blocknumber)
 	default:
-		return fmt.Errorf("receive unkonw transfer %s", tr)
+		panic(fmt.Sprintf("receive unkonw transfer %s", tr))
 	}
 	return err
 }
@@ -450,8 +463,8 @@ PreCheckRecievedTransfer pre check received message(directtransfer,mediatedtrans
 */
 func (c *Channel) PreCheckRecievedTransfer(tr encoding.EnvelopMessager) (fromState *EndState, toState *EndState, err error) {
 	evMsg := tr.GetEnvelopMessage()
-	if !c.isValidEnvelopMessage(evMsg) {
-		err = fmt.Errorf("ch address mismatch,expect=%s,got=%s", c.ChannelIdentifier.String(), evMsg)
+	if !c.isChannelIdentifierValid(evMsg) {
+		err = rerr.ErrChannelIdentifierMismatch.Errorf("ch address mismatch,expect=%s,got=%s", c.ChannelIdentifier.String(), evMsg)
 		return
 	}
 	if tr.GetSender() == c.OurState.Address {
@@ -461,7 +474,7 @@ func (c *Channel) PreCheckRecievedTransfer(tr encoding.EnvelopMessager) (fromSta
 		fromState = c.PartnerState
 		toState = c.OurState
 	} else {
-		err = fmt.Errorf("received transfer from unknown address =%s", utils.APex(tr.GetSender()))
+		err = rerr.ErrChannelNotParticipant.Errorf("received transfer from unknown address =%s", utils.APex(tr.GetSender()))
 		return
 	}
 	/*
@@ -474,8 +487,9 @@ func (c *Channel) PreCheckRecievedTransfer(tr encoding.EnvelopMessager) (fromSta
 	//If a node data is damaged, then the channel will not work, so the data must not be damaged.
 	if isInvalidNonce {
 		/*
-			may occur on normal operation
-			todo: give a example
+				may occur on normal operation
+				测试Case:
+			A-B进行交易,然后A删除数据库,B不删除,这时候A重启以后再次给B发送交易,B就会因为nonce错误而拒绝接受.
 		*/
 		log.Info(fmt.Sprintf("invalid nonce node=%s,from=%s,to=%s,expected nonce=%d,nonce=%d",
 			utils.Pex(c.OurState.Address[:]), utils.Pex(fromState.Address[:]),
@@ -488,7 +502,7 @@ func (c *Channel) PreCheckRecievedTransfer(tr encoding.EnvelopMessager) (fromSta
 		log.Error(fmt.Sprintf("NEGATIVE TRANSFER node=%s,from=%s,to=%s,transfer=%s",
 			utils.Pex(c.OurState.Address[:]), utils.Pex(fromState.Address[:]), utils.Pex(toState.Address[:]),
 			utils.StringInterface(tr, 3))) //for nest struct
-		err = fmt.Errorf("negative transfer")
+		err = rerr.ErrChannelTransferAmountDecrease
 		return
 	}
 	return
@@ -510,11 +524,18 @@ func (c *Channel) PreCheckRecievedTransfer(tr encoding.EnvelopMessager) (fromSta
  *		4. locksroot should be correct, but the hashlock verified in step 2 has been removed.
  */
 func (c *Channel) registerUnlock(tr *encoding.UnLock, blockNumber int64) (err error) {
-	fromState, _, err := c.PreCheckRecievedTransfer(tr)
+	if c.IsClosed() {
+		return rerr.ErrUpdateBalanceProofAfterClosed
+	}
+	fromState, toState, err := c.PreCheckRecievedTransfer(tr)
 	if err != nil {
 		return
 	}
 	err = fromState.registerSecretMessage(tr)
+	// 如果我是接收方,设置pms标志位
+	if toState.Address == c.OurState.Address {
+		c.DelegateState = channeltype.ChannelDelegateStateWaiting
+	}
 	return err
 }
 
@@ -534,6 +555,9 @@ func (c *Channel) registerUnlock(tr *encoding.UnLock, blockNumber int64) (err er
  *		4. sufficient tokens should remain in accounts in order to process transfer.
  */
 func (c *Channel) registerDirectTransfer(tr *encoding.DirectTransfer, blockNumber int64) (err error) {
+	if c.IsClosed() {
+		return rerr.ErrUpdateBalanceProofAfterClosed
+	}
 	fromState, toState, err := c.PreCheckRecievedTransfer(tr)
 	if err != nil {
 		return
@@ -549,12 +573,16 @@ func (c *Channel) registerDirectTransfer(tr *encoding.DirectTransfer, blockNumbe
 	*/
 	// It is error that token amount is negative or above available balance.
 	if amount.Cmp(utils.BigInt0) <= 0 {
-		return fmt.Errorf("direct transfer amount <0,amount=%s,message=%s", amount, tr)
+		return rerr.ErrChannelTransferAmountMismatch.Errorf("direct transfer amount <0,amount=%s,message=%s", amount, tr)
 	}
 	if amount.Cmp(fromState.Distributable(toState)) > 0 {
-		return fmt.Errorf("direct transfer amount too large,amount=%s,availabe=%s", amount, fromState.Distributable(toState))
+		return rerr.ErrChannelTransferAmountMismatch.Errorf("direct transfer amount too large,amount=%s,availabe=%s", amount, fromState.Distributable(toState))
 	}
 	err = fromState.registerDirectTransfer(tr)
+	// 如果我是接收方,设置pms标志位
+	if toState.Address == c.OurState.Address {
+		c.DelegateState = channeltype.ChannelDelegateStateWaiting
+	}
 	return err
 }
 
@@ -574,6 +602,9 @@ func (c *Channel) registerDirectTransfer(tr *encoding.DirectTransfer, blockNumbe
  *		4. there should be sufficient fund deposited in
  */
 func (c *Channel) registerMediatedTranser(tr *encoding.MediatedTransfer, blockNumber int64) (err error) {
+	if c.IsClosed() {
+		return rerr.ErrUpdateBalanceProofAfterClosed
+	}
 	fromState, toState, err := c.PreCheckRecievedTransfer(tr)
 	if err != nil {
 		return
@@ -588,7 +619,7 @@ func (c *Channel) registerMediatedTranser(tr *encoding.MediatedTransfer, blockNu
 	*/
 	// fault occurs that token amount is negative or above available amount.
 	if amount.Cmp(utils.BigInt0) <= 0 {
-		return fmt.Errorf("mediated transfer amount <0,amount=%s,message=%s", amount, tr)
+		return rerr.ErrChannelTransferAmountMismatch.Errorf("mediated transfer amount <0,amount=%s,message=%s", amount, tr)
 	}
 	if amount.Cmp(fromState.Distributable(toState)) > 0 {
 		return rerr.ErrInsufficientBalance
@@ -640,11 +671,15 @@ func (c *Channel) registerMediatedTranser(tr *encoding.MediatedTransfer, blockNu
 		log.Error(fmt.Sprintf("Lock expires after the settlement period. node=%s,from=%s,to=%s,lockexpiration=%d,currentblock=%d,end_settle_period=%d",
 			utils.Pex(c.OurState.Address[:]), utils.Pex(fromState.Address[:]), utils.Pex(toState.Address[:]),
 			tr.Expiration, blockNumber, endSettlePeriod))
-		return fmt.Errorf("lock expires after the settlement period")
+		return rerr.ErrChannelLockExpirationTooLarge
 	}
 	err = fromState.registerMediatedMessage(tr)
 	if err == nil {
 		c.ExternState.funcRegisterChannelForHashlock(c, tr.LockSecretHash)
+	}
+	// 如果我是接收方,设置pms标志位
+	if toState.Address == c.OurState.Address {
+		c.DelegateState = channeltype.ChannelDelegateStateWaiting
 	}
 	return err
 }
@@ -669,8 +704,11 @@ func (c *Channel) RegisterAnnounceDisposedResponse(response *encoding.AnnounceDi
 	return c.registerRemoveLock(response, blockNumber, response.LockSecretHash, false)
 }
 func (c *Channel) registerRemoveLock(messager encoding.EnvelopMessager, blockNumber int64, lockSecretHash common.Hash, mustExpired bool) (err error) {
+	if c.IsClosed() {
+		return rerr.ErrUpdateBalanceProofAfterClosed
+	}
 	msg := messager.GetEnvelopMessage()
-	fromState, _, err := c.PreCheckRecievedTransfer(messager)
+	fromState, toState, err := c.PreCheckRecievedTransfer(messager)
 	if err != nil {
 		return
 	}
@@ -678,7 +716,7 @@ func (c *Channel) registerRemoveLock(messager encoding.EnvelopMessager, blockNum
 		transfer amount should not change.
 	*/
 	if msg.TransferAmount.Cmp(fromState.TransferAmount()) != 0 {
-		err = errTransferAmountMismatch
+		err = rerr.ErrChannelTransferAmountMismatch
 		return
 	}
 	_, newtree, newlocksroot, err := fromState.TryRemoveHashLock(lockSecretHash, blockNumber, mustExpired)
@@ -689,24 +727,22 @@ func (c *Channel) registerRemoveLock(messager encoding.EnvelopMessager, blockNum
 		locksroot必须一致.
 	*/
 	if newlocksroot != msg.Locksroot {
-		return &InvalidLocksRootError{ExpectedLocksroot: newlocksroot, GotLocksroot: msg.Locksroot}
+		return rerr.InvalidLocksRoot(newlocksroot, msg.Locksroot)
 	}
 	fromState.Tree = newtree
 	err = fromState.registerRemoveLock(messager, lockSecretHash)
 	if err == nil {
 		c.ExternState.db.RemoveLock(c.ChannelIdentifier.ChannelIdentifier, fromState.Address, lockSecretHash)
 	}
+	// 如果我是接收方,设置pms标志位
+	if toState.Address == c.OurState.Address {
+		c.DelegateState = channeltype.ChannelDelegateStateWaiting
+	}
 	return err
 }
-
-func (c *Channel) isValidEnvelopMessage(evMsg *encoding.EnvelopMessage) bool {
+func (c *Channel) isChannelIdentifierValid(evMsg *encoding.EnvelopMessage) bool {
 	return evMsg.ChannelIdentifier == c.ChannelIdentifier.ChannelIdentifier &&
 		evMsg.OpenBlockNumber == c.ChannelIdentifier.OpenBlockNumber
-}
-
-func (c *Channel) isChannelIdentifierValid(id *contracts.ChannelUniqueID) bool {
-	return c.ChannelIdentifier.ChannelIdentifier == id.ChannelIdentifier &&
-		c.ChannelIdentifier.OpenBlockNumber == c.ChannelIdentifier.OpenBlockNumber
 }
 
 //GetNextNonce change nonce  means banlance proof state changed
@@ -726,17 +762,17 @@ sent.
 */
 func (c *Channel) CreateDirectTransfer(amount *big.Int) (tr *encoding.DirectTransfer, err error) {
 	if !c.CanTransfer() {
-		return nil, fmt.Errorf("transfer not possible, no funding or channel closed")
+		return nil, rerr.ChannelStateError(c.State).Errorf("transfer not possible, no funding or channel closed")
 	}
 	from := c.OurState
 	to := c.PartnerState
 	distributable := from.Distributable(to)
 	if amount.Cmp(utils.BigInt0) <= 0 || amount.Cmp(distributable) > 0 {
 		log.Debug(fmt.Sprintf("Insufficient funds : amount=%s, Distributable=%s", amount, distributable))
-		return nil, rerr.ErrInsufficientFunds
+		return nil, rerr.ErrInsufficientBalance
 	}
 	transferAmount := new(big.Int).Add(from.TransferAmount(), amount)
-	currentLocksroot := to.Tree.MerkleRoot()
+	currentLocksroot := from.Tree.MerkleRoot()
 	nonce := c.GetNextNonce()
 	bp := encoding.NewBalanceProof(nonce, transferAmount, currentLocksroot, &c.ChannelIdentifier)
 	tr = encoding.NewDirectTransfer(bp)
@@ -757,13 +793,13 @@ Args:
         message can be received.
 	fee: 手续费
 */
-func (c *Channel) CreateMediatedTransfer(initiator, target common.Address, fee *big.Int, amount *big.Int, expiration int64, lockSecretHash common.Hash) (tr *encoding.MediatedTransfer, err error) {
+func (c *Channel) CreateMediatedTransfer(initiator, target common.Address, fee *big.Int, amount *big.Int, expiration int64, lockSecretHash common.Hash, path []common.Address) (tr *encoding.MediatedTransfer, err error) {
 	if !c.CanTransfer() {
-		return nil, fmt.Errorf("transfer not possible, no funding or channel closed")
+		return nil, rerr.ChannelStateError(c.State).Errorf("transfer not possible, no funding or channel closed")
 	}
 	if amount.Cmp(utils.BigInt0) <= 0 || amount.Cmp(c.Distributable()) > 0 {
 		log.Info(fmt.Sprintf("Insufficient funds  amount=%s,Distributable=%s", amount, c.Distributable()))
-		return nil, fmt.Errorf("insufficient funds")
+		return nil, rerr.ErrInsufficientBalance
 	}
 	from := c.OurState
 	lock := &mtree.Lock{
@@ -775,16 +811,19 @@ func (c *Channel) CreateMediatedTransfer(initiator, target common.Address, fee *
 	transferAmount := from.TransferAmount()
 	nonce := c.GetNextNonce()
 	bp := encoding.NewBalanceProof(nonce, transferAmount, updatedLocksroot, &c.ChannelIdentifier)
-	tr = encoding.NewMediatedTransfer(bp, lock, target, initiator, fee)
+	tr = encoding.NewMediatedTransfer(bp, lock, target, initiator, fee, path)
 	return
 }
 
 //CreateUnlock creates  a unlock message
 func (c *Channel) CreateUnlock(lockSecretHash common.Hash) (tr *encoding.UnLock, err error) {
+	if c.IsClosed() {
+		return nil, rerr.ErrUpdateBalanceProofAfterClosed
+	}
 	from := c.OurState
 	lock, secret, err := from.getSecretByLockSecretHash(lockSecretHash)
 	if err != nil {
-		return nil, fmt.Errorf("no such lock for lockSecretHash:%s", utils.HPex(lockSecretHash))
+		return nil, rerr.ErrChannelLockSecretHashNotFound.Errorf("no such lock for lockSecretHash:%s", utils.HPex(lockSecretHash))
 	}
 	_, locksrootWithPendingLockRemoved, err := from.computeMerkleRootWithout(lock)
 	if err != nil {
@@ -801,6 +840,9 @@ func (c *Channel) CreateUnlock(lockSecretHash common.Hash) (tr *encoding.UnLock,
 CreateRemoveExpiredHashLockTransfer create this transfer to notify my patner that this hashlock is expired and i want to remove it .
 */
 func (c *Channel) CreateRemoveExpiredHashLockTransfer(lockSecretHash common.Hash, blockNumber int64) (tr *encoding.RemoveExpiredHashlockTransfer, err error) {
+	if c.IsClosed() {
+		return nil, rerr.ErrUpdateBalanceProofAfterClosed
+	}
 	_, _, newlocksroot, err := c.OurState.TryRemoveHashLock(lockSecretHash, blockNumber, true)
 	if err != nil {
 		return
@@ -820,6 +862,9 @@ CreateAnnounceDisposedResponse 必须先收到对方的AnnouceDisposedTransfer, 
  *	Note that a channel participant must first receive AnnounceDisposedTransfer, then he can
  */
 func (c *Channel) CreateAnnounceDisposedResponse(lockSecretHash common.Hash, blockNumber int64) (tr *encoding.AnnounceDisposedResponse, err error) {
+	if c.IsClosed() {
+		return nil, rerr.ErrUpdateBalanceProofAfterClosed
+	}
 	_, _, newlocksroot, err := c.OurState.TryRemoveHashLock(lockSecretHash, blockNumber, false)
 	if err != nil {
 		return
@@ -838,7 +883,7 @@ CreateAnnouceDisposed  声明我放弃收到的某个锁
  *	CreateAnnouceDisposed : function to create message of AnnounceDisposed
  *	Note that it claims that I have abandoned a lock.
  */
-func (c *Channel) CreateAnnouceDisposed(lockSecretHash common.Hash, blockNumber int64) (tr *encoding.AnnounceDisposed, err error) {
+func (c *Channel) CreateAnnouceDisposed(lockSecretHash common.Hash, blockNumber int64, reason rerr.StandardError) (tr *encoding.AnnounceDisposed, err error) {
 	lock, _, _, err := c.PartnerState.TryRemoveHashLock(lockSecretHash, blockNumber, false)
 	if err != nil {
 		return
@@ -848,34 +893,17 @@ func (c *Channel) CreateAnnouceDisposed(lockSecretHash common.Hash, blockNumber 
 	}
 	rp.ChannelIdentifier = c.ChannelIdentifier.ChannelIdentifier
 	rp.OpenBlockNumber = c.ChannelIdentifier.OpenBlockNumber
-	tr = encoding.NewAnnounceDisposed(rp)
+	tr = encoding.NewAnnounceDisposed(rp, reason.ErrorCode, reason.ErrorMsg)
 	return
 }
-
-//ErrWithdrawButHasLocks 不能在有锁的情况下发起 withdraw 请求
-/*
- *	ErrWithdrawButHasLocks : we can't send a request for withdraw when there are locks.
- */
-var ErrWithdrawButHasLocks = errors.New("cannot withdraw when has lock")
-
-//ErrSettleButHasLocks 不能在有锁的情况下发起 settle 请求
-/*
- *	ErrSettleButHasLocks : we can't send a request for settle when there are locks.
- */
-var ErrSettleButHasLocks = errors.New("cannot cooperative settle when has lock")
-
-var errInvalidChannelIdentifier = errors.New("channel identifier is invalid")
-var errInvalidSender = errors.New("messager's sender is not a participant of channel")
-var errParticipant = errors.New("participant error")
-var errBalance = errors.New("balance not match")
 
 func (c *Channel) preCheckChannelID(tr encoding.SignedMessager, id *encoding.ChannelIDInMessage) error {
 	if c.ChannelIdentifier.ChannelIdentifier != id.ChannelIdentifier ||
 		c.ChannelIdentifier.OpenBlockNumber != id.OpenBlockNumber {
-		return errInvalidChannelIdentifier
+		return rerr.ErrChannelIdentifierMismatch
 	}
 	if tr.GetSender() != c.OurState.Address && tr.GetSender() != c.PartnerState.Address {
-		return errInvalidSender
+		return rerr.ErrChannelInvalidSender
 	}
 	return nil
 }
@@ -902,7 +930,7 @@ func (c *Channel) RegisterAnnouceDisposed(tr *encoding.AnnounceDisposed) (err er
 	if lock == nil || mlock.LockSecretHash != lock.LockSecretHash ||
 		mlock.Expiration != lock.Expiration ||
 		mlock.Amount.Cmp(lock.Amount) != 0 {
-		return fmt.Errorf("RegisterAnnouceDisposed lock not match,receive=%s, mine=%s", mlock, lock)
+		return rerr.ErrChannelLockMisMatch.Errorf("RegisterAnnouceDisposed lock not match,receive=%s, mine=%s", mlock, lock)
 	}
 	return nil
 }
@@ -925,7 +953,7 @@ func (c *Channel) CreateWithdrawRequest(withdrawAmount *big.Int) (w *encoding.Wi
 		len(c.OurState.Lock2PendingLocks) > 0 ||
 		len(c.PartnerState.Lock2PendingLocks) > 0 ||
 		len(c.PartnerState.Lock2UnclaimedLocks) > 0 {
-		err = ErrWithdrawButHasLocks
+		err = rerr.ErrChannelWithdrawButHasLocks
 	}
 	d := new(encoding.WithdrawRequestData)
 	d.ChannelIdentifier = c.ChannelIdentifier.ChannelIdentifier
@@ -935,7 +963,7 @@ func (c *Channel) CreateWithdrawRequest(withdrawAmount *big.Int) (w *encoding.Wi
 	d.Participant1Balance = c.OurState.Balance(c.PartnerState)
 	d.Participant1Withdraw = withdrawAmount
 	if withdrawAmount.Cmp(d.Participant1Balance) > 0 {
-		err = fmt.Errorf("withdraw amount too large,current=%s,withdraw=%s", w.Participant1Balance, withdrawAmount)
+		err = rerr.ErrChannelWithdrawAmount.Errorf("withdraw amount too large,current=%s,withdraw=%s", w.Participant1Balance, withdrawAmount)
 		return
 	}
 	w = encoding.NewWithdrawRequest(d)
@@ -945,7 +973,7 @@ func (c *Channel) CreateWithdrawRequest(withdrawAmount *big.Int) (w *encoding.Wi
 func (c *Channel) preCheckSettleDataInMessage(tr encoding.SignedMessager, sd *encoding.SettleDataInMessage) (err error) {
 	if c.ChannelIdentifier.ChannelIdentifier != sd.ChannelIdentifier ||
 		c.ChannelIdentifier.OpenBlockNumber != sd.OpenBlockNumber {
-		return errInvalidChannelIdentifier
+		return rerr.ErrChannelIdentifierMismatch
 	}
 	var state1, state2 *EndState
 	if tr.GetSender() == c.OurState.Address {
@@ -955,7 +983,7 @@ func (c *Channel) preCheckSettleDataInMessage(tr encoding.SignedMessager, sd *en
 		state1 = c.PartnerState
 		state2 = c.OurState
 	} else {
-		return errInvalidSender
+		return rerr.ErrChannelInvalidSender
 	}
 	/*
 		state1 ,state2和 participant1,participant2没有对应关系,需要自己找出来.
@@ -963,17 +991,17 @@ func (c *Channel) preCheckSettleDataInMessage(tr encoding.SignedMessager, sd *en
 	if (state1.Address != sd.Participant1 && state1.Address != sd.Participant2) ||
 		(state2.Address != sd.Participant1 && state2.Address != sd.Participant2) ||
 		sd.Participant1 == sd.Participant2 {
-		return errParticipant
+		return rerr.ErrChannelNotParticipant
 	}
 	if state1.Address == sd.Participant1 {
 		if state1.Balance(state2).Cmp(sd.Participant1Balance) != 0 ||
 			state2.Balance(state1).Cmp(sd.Participant2Balance) != 0 {
-			return errBalance
+			return rerr.ErrChannelBalanceNotMatch
 		}
 	} else {
 		if state2.Balance(state1).Cmp(sd.Participant1Balance) != 0 ||
 			state1.Balance(state2).Cmp(sd.Participant2Balance) != 0 {
-			return errBalance
+			return rerr.ErrChannelBalanceNotMatch
 		}
 	}
 
@@ -1003,13 +1031,13 @@ func (c *Channel) hasAnyLock() bool {
 func (c *Channel) RegisterWithdrawRequest(tr *encoding.WithdrawRequest) (err error) {
 	if c.ChannelIdentifier.ChannelIdentifier != tr.ChannelIdentifier ||
 		c.ChannelIdentifier.OpenBlockNumber != tr.OpenBlockNumber {
-		return errInvalidChannelIdentifier
+		return rerr.ErrChannelIdentifierMismatch
 	}
 	if tr.GetSender() != c.PartnerState.Address {
-		return errInvalidSender
+		return rerr.ErrChannelInvalidSender
 	}
 	if c.PartnerState.Balance(c.OurState).Cmp(tr.Participant1Balance) != 0 {
-		return errBalance
+		return rerr.ErrChannelBalanceNotMatch
 	}
 	/*
 		有可能在我收到 request 的前一刻,我正在发出一笔交易,
@@ -1019,9 +1047,9 @@ func (c *Channel) RegisterWithdrawRequest(tr *encoding.WithdrawRequest) (err err
 	if len(c.PartnerState.Lock2UnclaimedLocks) > 0 ||
 		len(c.PartnerState.Lock2PendingLocks) > 0 ||
 		len(c.OurState.Lock2UnclaimedLocks) > 0 {
-		return errors.New("cannot withdraw when has unlock")
+		return rerr.ErrChannelWithdrawButHasLocks
 	}
-	c.State = channeltype.StateWithdraw
+	c.State = channeltype.StatePartnerWithdrawing
 	return nil
 }
 
@@ -1066,7 +1094,7 @@ func (c *Channel) CreateWithdrawResponse(req *encoding.WithdrawRequest) (w *enco
 	wd.Participant2 = c.OurState.Address
 	wd.Participant1Balance = c.PartnerState.Balance(c.OurState)
 	wd.Participant1Withdraw = req.Participant1Withdraw
-	w = encoding.NewWithdrawResponse(wd)
+	w = encoding.NewWithdrawResponse(wd, rerr.ErrSuccess.ErrorCode, rerr.ErrSuccess.ErrorMsg)
 	/*
 		再次验证信息正确性,
 	*/
@@ -1087,21 +1115,23 @@ func (c *Channel) CreateWithdrawResponse(req *encoding.WithdrawRequest) (w *enco
 func (c *Channel) RegisterWithdrawResponse(tr *encoding.WithdrawResponse) error {
 	if c.ChannelIdentifier.ChannelIdentifier != tr.ChannelIdentifier ||
 		c.ChannelIdentifier.OpenBlockNumber != tr.OpenBlockNumber {
-		return errInvalidChannelIdentifier
+		return rerr.ErrChannelIdentifierMismatch
 	}
 	if tr.GetSender() != c.PartnerState.Address {
-		return errInvalidSender
+		return rerr.ErrChannelInvalidSender
 	}
 	if c.OurState.Balance(c.PartnerState).Cmp(tr.Participant1Balance) != 0 {
-		return errBalance
+		return rerr.ErrChannelBalanceNotMatch
 	}
 	if len(c.PartnerState.Lock2UnclaimedLocks) > 0 ||
 		len(c.PartnerState.Lock2PendingLocks) > 0 ||
 		len(c.OurState.Lock2UnclaimedLocks) > 0 ||
 		len(c.OurState.Lock2PendingLocks) > 0 {
-		return errors.New("cannot withdraw when has unlock")
+		return rerr.ErrChannelWithdrawButHasLocks
 	}
-	c.State = channeltype.StateWithdraw
+	if c.State != channeltype.StateWithdraw {
+		return rerr.ErrChannelState.Printf("receive withdraw response but my channel state is %s", c.State)
+	}
 	return nil
 }
 
@@ -1130,7 +1160,7 @@ func (c *Channel) CreateCooperativeSettleRequest() (s *encoding.SettleRequest, e
 		len(c.OurState.Lock2PendingLocks) > 0 ||
 		len(c.PartnerState.Lock2PendingLocks) > 0 ||
 		len(c.PartnerState.Lock2UnclaimedLocks) > 0 {
-		err = ErrWithdrawButHasLocks
+		err = rerr.ErrChannelCooperativeSettleButHasLocks
 	}
 	wd := new(encoding.SettleRequestData)
 	wd.ChannelIdentifier = c.ChannelIdentifier.ChannelIdentifier
@@ -1144,6 +1174,7 @@ func (c *Channel) CreateCooperativeSettleRequest() (s *encoding.SettleRequest, e
 }
 
 //RegisterCooperativeSettleRequest check settle request and update state
+//该方法在收到对方的CooperativeRequest时调用,自己发送CooperativeRequest时不应该使用该方法
 func (c *Channel) RegisterCooperativeSettleRequest(msg *encoding.SettleRequest) error {
 	err := c.preCheckSettleDataInMessage(msg, &msg.SettleDataInMessage)
 	if err != nil {
@@ -1164,9 +1195,9 @@ func (c *Channel) RegisterCooperativeSettleRequest(msg *encoding.SettleRequest) 
 	if len(c.PartnerState.Lock2UnclaimedLocks) > 0 ||
 		len(c.PartnerState.Lock2PendingLocks) > 0 ||
 		len(c.OurState.Lock2UnclaimedLocks) > 0 {
-		return errors.New("cannot cooperative settle when has unlock")
+		return rerr.ErrChannelCooperativeSettleButHasLocks
 	}
-	c.State = channeltype.StateCooprativeSettle
+	c.State = channeltype.StatePartnerCooperativeSettling
 	return nil
 }
 
@@ -1187,12 +1218,12 @@ CreateCooperativeSettleResponse :
  */
 func (c *Channel) CreateCooperativeSettleResponse(req *encoding.SettleRequest) (res *encoding.SettleResponse, err error) {
 	if len(c.OurState.Lock2PendingLocks) > 0 ||
-		len(c.OurState.Lock2PendingLocks) > 0 {
+		len(c.OurState.Lock2UnclaimedLocks) > 0 {
 		log.Warn(fmt.Sprintf("CreateCooperativeSettleResponse ,but i'm sending transfer on road,these transfer should canceled immediately"))
 	}
 	if len(c.PartnerState.Lock2PendingLocks) > 0 ||
 		len(c.PartnerState.Lock2UnclaimedLocks) > 0 {
-		panic("should no locks for partner state when  CreateWithdrawResponse")
+		panic("should no locks for partner state when  CreateCooperativeSettleResponse")
 	}
 	d := new(encoding.SettleResponseData)
 	d.ChannelIdentifier = c.ChannelIdentifier.ChannelIdentifier
@@ -1202,7 +1233,7 @@ func (c *Channel) CreateCooperativeSettleResponse(req *encoding.SettleRequest) (
 	d.Participant1 = c.PartnerState.Address
 	d.Participant1Balance = c.PartnerState.Balance(c.OurState)
 
-	res = encoding.NewSettleResponse(d)
+	res = encoding.NewSettleResponse(d, rerr.ErrSuccess.ErrorCode, rerr.ErrSuccess.ErrorMsg)
 	/*
 		再次验证信息正确性,
 	*/
@@ -1220,7 +1251,9 @@ func (c *Channel) RegisterCooperativeSettleResponse(msg *encoding.SettleResponse
 	if err != nil {
 		return err
 	}
-	c.State = channeltype.StateCooprativeSettle
+	if c.State != channeltype.StateCooprativeSettle {
+		return rerr.ErrChannelState.Printf("receive cooperative settle response but my channel state is %s", c.State)
+	}
 	return nil
 }
 
@@ -1237,7 +1270,7 @@ PrepareForWithdraw :
  */
 func (c *Channel) PrepareForWithdraw() error {
 	if c.State != channeltype.StateOpened {
-		return fmt.Errorf("state must be opened when withdraw, but state is %s", c.State)
+		return rerr.ErrChannelNotAllowWithdraw.Printf("state must be opened when withdraw, but state is %s", c.State)
 	}
 	c.State = channeltype.StatePrepareForWithdraw
 	return nil
@@ -1257,7 +1290,7 @@ PrepareForCooperativeSettle :
  */
 func (c *Channel) PrepareForCooperativeSettle() error {
 	if c.State != channeltype.StateOpened {
-		return fmt.Errorf("state must be opened when cooperative settle, but state is %s", c.State)
+		return rerr.ChannelStateError(c.State)
 	}
 	c.State = channeltype.StatePrepareForCooperativeSettle
 	return nil
@@ -1275,10 +1308,10 @@ CancelWithdrawOrCooperativeSettle 等待一段时间以后发现不能合作关�
  */
 func (c *Channel) CancelWithdrawOrCooperativeSettle() error {
 	if c.ExternState.ClosedBlock != 0 {
-		return fmt.Errorf("no need cancel because of channel is closed")
+		return rerr.ChannelStateError(c.State)
 	}
 	if c.State != channeltype.StatePrepareForCooperativeSettle && c.State != channeltype.StatePrepareForWithdraw {
-		return fmt.Errorf("state is %s,cannot cancel withdraw or cooperative", c.State)
+		return rerr.ChannelStateError(c.State) // fmt.Errorf("state is %s,cannot cancel withdraw or cooperative", c.State)
 	}
 	c.State = channeltype.StateOpened
 	return nil
@@ -1303,16 +1336,28 @@ func (c *Channel) CanWithdrawOrCooperativeSettle() bool {
 }
 
 //Close async close this channel
-func (c *Channel) Close() (result *utils.AsyncResult) {
+func (c *Channel) Close() (err error) {
 	if c.State != channeltype.StateOpened {
 		log.Warn(fmt.Sprintf("try to close channel %s,but it's state is %s", utils.HPex(c.ChannelIdentifier.ChannelIdentifier), c.State))
 	}
 	if c.State == channeltype.StateClosed ||
 		c.State == channeltype.StateSettled {
-		result = utils.NewAsyncResult()
-		result.Result <- fmt.Errorf("channel %s already closed or settled", utils.HPex(c.ChannelIdentifier.ChannelIdentifier))
-		return
+		return rerr.ChannelStateError(c.State)
+		//return fmt.Errorf("channel %s already closed or settled", utils.HPex(c.ChannelIdentifier.ChannelIdentifier))
 	}
+	/*
+		如果我还持有对方给我的锁,这时候从安全的角度考虑,不能进行关闭,
+		如果我不知道密码,有可能过一会儿我就知道密码了,
+		如果我已经知道密码,可能我还没有在链上注册.
+		新的考虑:
+		关闭之后,如果从其他途径得到了密码,仍然可以选择链上注册,然后unlock,因为我可以提交证据的时间
+		肯定大于选择持有的任何一个锁的expiration
+	*/
+	//if len(c.PartnerState.Lock2PendingLocks) > 0 || len(c.PartnerState.Lock2UnclaimedLocks) > 0 {
+	//	result = utils.NewAsyncResult()
+	//	result.Result <- fmt.Errorf("try to close a channel,but I have partner's lock")
+	//	return
+	//}
 	/*
 		在关闭的过程中崩溃了,或者关闭 tx 失败了,这些都可能发生.所以不能因为 state 不对,就不允许 close
 		标记的目的是为了阻止继续接受或者发起交易.
@@ -1322,19 +1367,21 @@ func (c *Channel) Close() (result *utils.AsyncResult) {
 	 *	We cannot forbid close just because channel state is abnormal.
 	 *	State tag is used to prevent further receiving or sending transfers.
 	 */
-	c.State = channeltype.StateClosing
+
 	bp := c.PartnerState.BalanceProofState
-	result = c.ExternState.Close(bp)
-	return
+	err = c.ExternState.Close(bp)
+	if err != nil {
+		return
+	}
+	c.State = channeltype.StateClosing
+	return nil
 }
 
-//Settle async settle this channel
-func (c *Channel) Settle() (result *utils.AsyncResult) {
+//Settle async settle this channel,blockNumber is the current blockNumber
+func (c *Channel) Settle(blockNumber int64) (err error) {
 	if c.State != channeltype.StateClosed {
-		return utils.NewAsyncResultWithError(fmt.Errorf("settle only valid when a channel is closed,now is %s", c.State))
+		return rerr.ChannelStateError(c.State)
 	}
-	//不需要修改状态, settle 失败以后还可以继续调用 settle.
-	//c.State = channeltype.StateSettling
 	var MyTransferAmount, PartnerTransferAmount *big.Int
 	var MyLocksroot, PartnerLocksroot common.Hash
 	if c.OurState.BalanceProofState != nil {
@@ -1349,7 +1396,15 @@ func (c *Channel) Settle() (result *utils.AsyncResult) {
 	} else {
 		PartnerTransferAmount = utils.BigInt0
 	}
-	return c.ExternState.Settle(MyTransferAmount, PartnerTransferAmount, MyLocksroot, PartnerLocksroot)
+	if c.ExternState.SettledBlock > blockNumber {
+		return rerr.ErrChannelSettleTimeout
+	}
+	err = c.ExternState.Settle(MyTransferAmount, PartnerTransferAmount, MyLocksroot, PartnerLocksroot)
+	if err != nil {
+		return
+	}
+	c.State = channeltype.StateSettling
+	return
 }
 
 //GetNeedRegisterSecrets find all secres need to reveal on secret
@@ -1437,12 +1492,18 @@ func (c *Channel) String() string {
 
 // NewChannelSerialization serialize the channel to save to database
 func NewChannelSerialization(c *Channel) *channeltype.Serialization {
-	var ourSecrets, partnerSecrets []common.Hash
+	var ourSecrets, partnerSecrets []*channeltype.KnownSecret
 	for _, s := range c.OurState.Lock2UnclaimedLocks {
-		ourSecrets = append(ourSecrets, s.Secret)
+		ourSecrets = append(ourSecrets, &channeltype.KnownSecret{
+			Secret:              s.Secret,
+			IsRegisteredOnChain: s.IsRegisteredOnChain,
+		})
 	}
 	for _, s := range c.PartnerState.Lock2UnclaimedLocks {
-		partnerSecrets = append(partnerSecrets, s.Secret)
+		partnerSecrets = append(partnerSecrets, &channeltype.KnownSecret{
+			Secret:              s.Secret,
+			IsRegisteredOnChain: s.IsRegisteredOnChain,
+		})
 	}
 	s := &channeltype.Serialization{
 		Key:                    c.ChannelIdentifier.ChannelIdentifier[:],
@@ -1458,6 +1519,7 @@ func NewChannelSerialization(c *Channel) *channeltype.Serialization {
 		OurKnownSecrets:        ourSecrets,
 		PartnerKnownSecrets:    partnerSecrets,
 		State:                  c.State,
+		DelegateState:          c.DelegateState,
 		SettleTimeout:          c.SettleTimeout,
 		OurContractBalance:     c.OurState.ContractBalance,
 		PartnerContractBalance: c.PartnerState.ContractBalance,
@@ -1465,4 +1527,24 @@ func NewChannelSerialization(c *Channel) *channeltype.Serialization {
 		SettledBlock:           c.ExternState.SettledBlock,
 	}
 	return s
+}
+
+/*
+GetHalfSettleTimeoutSeconds 获取一个通道的一半SettleTimeout对应的时间,单位秒
+*/
+func (c *Channel) GetHalfSettleTimeoutSeconds() int64 {
+	var resp float32
+	if params.ChainID.Int64() == params.TestPrivateChainID {
+		resp = float32(c.SettleTimeout) / 2 * float32(params.BlockPeriodSecondsForTest)
+	} else if params.ChainID.Int64() == params.TestPrivateChainID2 {
+		// 出块间隔为50ms毫秒
+		resp = float32(c.SettleTimeout) / 2 * float32(params.BlockPeriodSecondsForTest2)
+	} else {
+		resp = float32(c.SettleTimeout) / 2 * float32(params.BlockPeriodSeconds)
+	}
+	// 最小为1秒,可能出现于自动化测试中,因为自动化测试使用的私链出块间隔为50ms
+	if resp < 1 {
+		resp = 1
+	}
+	return int64(resp)
 }
