@@ -497,6 +497,10 @@ func (ce *ChainEvents) doPunishes(d *models.Delegate) error {
 	return nil
 }
 func (ce *ChainEvents) doUpdateTransfer(d *models.Delegate) error {
+	//现在是不论什么情况都会安排update,失败则记录下来,所以可能会出现没有有效的balanceProof的情况
+	if d.Content.UpdateTransfer.Nonce<=0{
+		return nil
+	}
 	channelAddr := common.BytesToHash(d.ChannelIdentifier)
 	log.Info(fmt.Sprintf("UpdateTransfer %s called ,updateTransfer=%s",
 		utils.Pex(d.ChannelIdentifier), utils.StringInterface(d.Content.UpdateTransfer, 3)))
