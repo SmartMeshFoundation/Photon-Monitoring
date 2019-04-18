@@ -5,13 +5,18 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/SmartMeshFoundation/Photon/internal/rpanic"
+
 	"time"
 
 	"math/big"
 
 	"strings"
 
+	"strconv"
+
 	"github.com/SmartMeshFoundation/Photon/log"
+	"github.com/SmartMeshFoundation/Photon/models"
 	"github.com/SmartMeshFoundation/Photon/network/helper"
 	"github.com/SmartMeshFoundation/Photon/network/rpc"
 	"github.com/SmartMeshFoundation/Photon/network/rpc/contracts"
@@ -66,24 +71,28 @@ func makeEventID(l *types.Log) eventID {
 Events handles all contract events from blockchain
 */
 type Events struct {
-	StateChangeChannel  chan transfer.StateChange
-	lastBlockNumber     int64
-	rpcModuleDependency RPCModuleDependency
-	client              *helper.SafeEthClient
-	pollPeriod          time.Duration      // 轮询周期,必须与公链出块间隔一致
-	stopChan            chan int           // has stopped?
-	txDone              map[eventID]uint64 // 该map记录最近30块内处理的events流水,用于事件去重
-	firstStart          bool               //保证ContractHistoryEventCompleteStateChange 只会发送一次
+	StateChangeChannel       chan transfer.StateChange
+	lastBlockNumber          int64
+	lastBlockNumberTimestamp int64
+	isChainEffective         bool
+	rpcModuleDependency      RPCModuleDependency
+	client                   *helper.SafeEthClient
+	pollPeriod               time.Duration              // 轮询周期,必须与公链出块间隔一致
+	stopChan                 chan int                   // has stopped?
+	txDone                   map[eventID]uint64         // 该map记录最近30块内处理的events流水,用于事件去重
+	firstStart               bool                       //保证ContractHistoryEventCompleteStateChange 只会发送一次
+	chainEventRecordDao      models.ChainEventRecordDao // 事件处理记录保存
 }
 
 //NewBlockChainEvents create BlockChainEvents
-func NewBlockChainEvents(client *helper.SafeEthClient, rpcModuleDependency RPCModuleDependency) *Events {
+func NewBlockChainEvents(client *helper.SafeEthClient, rpcModuleDependency RPCModuleDependency, chainEventRecordDao models.ChainEventRecordDao) *Events {
 	be := &Events{
 		StateChangeChannel:  make(chan transfer.StateChange, 10),
 		rpcModuleDependency: rpcModuleDependency,
 		client:              client,
 		txDone:              make(map[eventID]uint64),
 		firstStart:          true,
+		chainEventRecordDao: chainEventRecordDao,
 	}
 	return be
 }
@@ -126,13 +135,48 @@ func (be *Events) Start(LastBlockNumber int64) {
 	go be.startAlarmTask()
 }
 
+/*
+ChangeEthRPCEndpointPort 临时更换连接的公链端口,并重启AlarmTask,for test
+*/
+func (be *Events) ChangeEthRPCEndpointPort(newPort int) {
+	s := strings.Split(be.client.URL, ":")
+	s[2] = strconv.Itoa(newPort)
+	be.client.URL = strings.Join(s, ":")
+	log.Info(fmt.Sprintf("eth-rpc-endpoint change to %s", be.client.URL))
+	// 触发重启
+	if be.client.IsConnected() {
+		be.client.Client.Close()
+	}
+}
+
+func (be *Events) notifyPhotonStartupCompleteIfNeeded(currentBlock int64) {
+	if be.firstStart {
+		be.firstStart = false
+		//通知photon,历史消息处理完毕,可以进行后续启动了.
+		be.StateChangeChannel <- &mediatedtransfer.ContractHistoryEventCompleteStateChange{
+			BlockNumber: currentBlock,
+		}
+	}
+}
+
 func (be *Events) startAlarmTask() {
 	log.Trace(fmt.Sprintf("start getting lasted block number from blocknubmer=%d", be.lastBlockNumber))
+	rpanic.PanicRecover("startAlarmTask")
 	startUpBlockNumber := be.lastBlockNumber
 	currentBlock := be.lastBlockNumber
+	currentBlockTimestamp := be.lastBlockNumberTimestamp
 	logPeriod := int64(1)
 	retryTime := 0
 	be.stopChan = make(chan int)
+	be.StateChangeChannel <- &transfer.BlockStateChange{BlockNumber: currentBlock}
+	/*
+		正常处理流程:
+		1. 抓取历史事件,排序,发送给photon
+		2. 通知photon启动完毕
+		其他处理流程:
+		通知photon启动完毕
+		也就是说无论发生了什么错误,尽快通知photon启动完毕,不要卡主.
+	*/
 	for {
 		//get the lastest number imediatelly
 		if be.pollPeriod == 0 {
@@ -150,24 +194,61 @@ func (be *Events) startAlarmTask() {
 		ctx, cancelFunc := context.WithTimeout(context.Background(), params.EthRPCTimeout)
 		h, err := be.client.HeaderByNumber(ctx, nil)
 		if err != nil {
-			log.Error(fmt.Sprintf("HeaderByNumber err=%s", err))
+			//无论公链发生什么错误,都应该让photon启动起来,而不是卡主
+			be.notifyPhotonStartupCompleteIfNeeded(currentBlock)
+			log.Warn(fmt.Sprintf("HeaderByNumber err=%s", err))
 			cancelFunc()
 			if be.stopChan != nil {
 				be.pollPeriod = 0
 				go be.client.RecoverDisconnect()
 			}
+			// 连接失败直接通知上层切换到无效公链
+			be.isChainEffective = false
+			be.StateChangeChannel <- &transfer.EffectiveChainStateChange{
+				IsEffective:              false,
+				LastBlockNumber:          currentBlock,
+				LastBlockNumberTimestamp: currentBlockTimestamp,
+			}
 			return
 		}
 		cancelFunc()
 		lastedBlock := h.Number.Int64()
+		lastedBlockTimestamp := h.Time.Int64()
+		// 由于测试环境这个值被修改为了毫秒,必须进行转换. 考虑到如果lastedBlockTimestamp当做秒来解释,将会是几万年以后,因此这么做是合理的
+		//todo 为9999999999加上注释,并且给一个合理的解释
+		if lastedBlockTimestamp > 9999999999 {
+			lastedBlockTimestamp = lastedBlockTimestamp / 1000
+		}
+		now := time.Now().Unix()
+		if lastedBlockTimestamp-now > int64(params.BlockPeriodSeconds) {
+			// 如果本地时间小于最新块的出块时间15秒,说明本地时间服务有问题,这种情况下运行photon是不安全的,直接结束photon
+			log.Crit(fmt.Sprintf("local time error local=%d lastedBlockTimestamp=%d, please run photon again after you fix local time server", now, lastedBlockTimestamp))
+		}
+		//连接到了有效的公链链接,但是公链最新块在三分钟之前,可能公链已经停止同步了
+		//todo 为180定义一个数字
+		if now-lastedBlockTimestamp >= 180 && startUpBlockNumber == currentBlock {
+			// 最新块的出块时间在3分钟以前,说明连接到了一个无效的公链节点,通知上层切换到无效公链
+			be.isChainEffective = false
+			be.StateChangeChannel <- &transfer.EffectiveChainStateChange{
+				IsEffective:              false,
+				LastBlockNumber:          lastedBlock,
+				LastBlockNumberTimestamp: lastedBlockTimestamp,
+			}
+		}
 		// 这里如果出现切换公链导致获取到的新块比当前块更小的话,只需要等待即可
 		if currentBlock >= lastedBlock {
-			if startUpBlockNumber == lastedBlock {
+			if startUpBlockNumber >= lastedBlock {
+				if startUpBlockNumber > lastedBlock {
+					log.Error(fmt.Sprintf("photon last processed number is %d,but spectrum's lastest block number  %d", startUpBlockNumber, lastedBlock))
+				}
 				// 当启动时获取不到新块,也需要通知photonService,否则会导致api无法启动
 				log.Warn(fmt.Sprintf("photon start with blockNumber %d,but lastedBlockNumber on chain also %d", startUpBlockNumber, lastedBlock))
 				be.StateChangeChannel <- &transfer.BlockStateChange{BlockNumber: currentBlock}
 				startUpBlockNumber = 0
 			}
+			//在启动的时候连接到了一条无效的公链(不出块)的情况下,photon也应该可以继续启动.
+			// 连接到另外一个节点,该节点落后很多,也应该让photon尽快启动
+			be.notifyPhotonStartupCompleteIfNeeded(currentBlock)
 			time.Sleep(be.pollPeriod / 2)
 			retryTime++
 			if retryTime > 10 {
@@ -177,7 +258,7 @@ func (be *Events) startAlarmTask() {
 		}
 		retryTime = 0
 		if currentBlock != -1 && lastedBlock != currentBlock+1 {
-			log.Warn(fmt.Sprintf("AlarmTask missed %d blocks", lastedBlock-currentBlock-1))
+			log.Warn(fmt.Sprintf("AlarmTask missed %d blocks,currentBlock=%d", lastedBlock-currentBlock-1, currentBlock))
 		}
 		if lastedBlock%logPeriod == 0 {
 			log.Trace(fmt.Sprintf("new block :%d", lastedBlock))
@@ -191,31 +272,51 @@ func (be *Events) startAlarmTask() {
 		stateChanges, err := be.queryAllStateChange(fromBlockNumber, lastedBlock)
 		if err != nil {
 			log.Error(fmt.Sprintf("queryAllStateChange err=%s", err))
+			//无论公链发生什么错误,都应该让photon启动起来,而不是卡主
+			be.notifyPhotonStartupCompleteIfNeeded(currentBlock)
 			// 如果这里出现err,不能继续处理该blocknumber,否则会丢事件,直接从该块重新处理即可
 			time.Sleep(be.pollPeriod / 2)
 			continue
 		}
 		if len(stateChanges) > 0 {
-			log.Trace(fmt.Sprintf("receive %d events between block %d - %d", len(stateChanges), currentBlock+1, lastedBlock))
+			log.Trace(fmt.Sprintf("receive %d events between block %d - %d", len(stateChanges), fromBlockNumber, lastedBlock))
 		}
 
 		// refresh block number and notify PhotonService
 		currentBlock = lastedBlock
+		currentBlockTimestamp = lastedBlockTimestamp
 		be.lastBlockNumber = currentBlock
-
-		be.StateChangeChannel <- &transfer.BlockStateChange{BlockNumber: currentBlock}
-
+		be.lastBlockNumberTimestamp = currentBlockTimestamp
+		var lastSendBlockNumber int64
 		// notify Photon service
+		//我们需要photon service在处理相关事件的时候知道了对应的块已经发生了,否则可能因为错误的当前块数而出现逻辑错误.
+		//同时也需要以下问题得到有效解决
+		//A-B交易,A发送RevealSecret以后崩溃,然后很久以后重启
+		//如果直接告诉Photon最新块数,那么photon将直接判断该锁过期而发送RemoveExpiredHashLock
+		//但是很有可能B已经在链上注册了密码,这个时候A如果发送RemoveExpiredHashLock,将会导致该通道无法使用.
+		//因为B会拒绝RemoveExpiredHashLock.为了避免这种情况,一定要在处理最新块之前,处理SerecretRevealOnChain
 		for _, sc := range stateChanges {
+			if sc.GetBlockNumber() != lastSendBlockNumber {
+				be.StateChangeChannel <- &transfer.BlockStateChange{BlockNumber: sc.GetBlockNumber()}
+				lastSendBlockNumber = sc.GetBlockNumber()
+			}
 			be.StateChangeChannel <- sc
 		}
-		if be.firstStart {
-			be.firstStart = false
-			//通知photon,历史消息处理完毕,可以进行后续启动了.
-			be.StateChangeChannel <- &mediatedtransfer.ContractHistoryEventCompleteStateChange{
-				BlockNumber: currentBlock,
+		// 先切换有效公链,保证消息处理开始时,
+		// 出块时间在3分钟内且大于当前块,被认为是有效最新块,如果当前为无效公链状态,通知上层切换到有效公链状态
+		if !be.isChainEffective {
+			be.isChainEffective = true
+			be.StateChangeChannel <- &transfer.EffectiveChainStateChange{
+				IsEffective:              true,
+				LastBlockNumber:          lastedBlock,
+				LastBlockNumberTimestamp: lastedBlockTimestamp,
 			}
 		}
+		//正常启动流程是,所有历史事件处理完毕,然后再通知photon继续启动
+		if lastSendBlockNumber != currentBlock {
+			be.StateChangeChannel <- &transfer.BlockStateChange{BlockNumber: currentBlock}
+		}
+		be.notifyPhotonStartupCompleteIfNeeded(currentBlock)
 		// 清除过期流水
 		for key, blockNumber := range be.txDone {
 			if blockNumber <= uint64(fromBlockNumber) {
@@ -270,7 +371,6 @@ func (be *Events) getLogsFromChain(fromBlock int64, toBlock int64) (logs []types
 func (be *Events) parseLogsToEvents(logs []types.Log) (stateChanges []mediatedtransfer.ContractStateChange, err error) {
 	for _, l := range logs {
 		eventName := topicToEventName[l.Topics[0]]
-
 		// 根据已处理流水去重
 		if doneBlockNumber, ok := be.txDone[makeEventID(&l)]; ok {
 			if doneBlockNumber == l.BlockNumber {
@@ -279,6 +379,15 @@ func (be *Events) parseLogsToEvents(logs []types.Log) (stateChanges []mediatedtr
 			}
 			log.Warn(fmt.Sprintf("event tx=%s happened at %d, but now happend at %d ", l.TxHash.String(), doneBlockNumber, l.BlockNumber))
 		}
+		//chainEventRecordID := be.chainEventRecordDao.MakeChainEventID(&l)
+		//// 根据已处理流水去重
+		//if doneBlockNumber, delivered := be.chainEventRecordDao.CheckChainEventDelivered(chainEventRecordID); delivered {
+		//	if doneBlockNumber == l.BlockNumber {
+		//		//log.Trace(fmt.Sprintf("get event txhash=%s repeated,ignore...", l.TxHash.String()))
+		//		continue
+		//	}
+		//	log.Warn(fmt.Sprintf("event tx=%s happened at %d, but now happend at %d ", l.TxHash.String(), doneBlockNumber, l.BlockNumber))
+		//}
 
 		// open,deposit,withdraw事件延迟确认,开关默认关闭,方便测试
 		if params.EnableForkConfirm && needConfirm(eventName) {
@@ -368,6 +477,7 @@ func (be *Events) parseLogsToEvents(logs []types.Log) (stateChanges []mediatedtr
 			log.Warn(fmt.Sprintf("receive unkonwn type event from chain : \n%s\n", utils.StringInterface(l, 3)))
 		}
 		// 记录处理流水
+		//be.chainEventRecordDao.NewDeliveredChainEvent(chainEventRecordID, l.BlockNumber)
 		be.txDone[makeEventID(&l)] = l.BlockNumber
 	}
 	return

@@ -22,7 +22,7 @@ contract TokensNetwork is Utils {
     // After a pre-set 'settle time' period, node can submit proofs without any concern that he has no chance
     // to submit punish proofs for his counterpart's submitted updatetransfer & unlock at the time of settle.
     // It's much reasonable to set this variable to a larger digit, like 100 in the version of release.
-    uint64 constant public punish_block_number = 5; //3600/14 about one hour
+    uint64 constant public punish_block_number = 257; // 3600/14;  //about one hour
 
     // Chain ID as specified by EIP155 used in balance proof signatures to avoid replay attacks
     uint256 public chain_id;
@@ -155,7 +155,7 @@ contract TokensNetwork is Utils {
     }
 
     /// @notice contract constructor.
-    /// @param _chain_id            id of block chain,for example 1 for mainnet,3 for testnet
+    /// @param _chain_id            id of block chain, it's both 3 for spectrum mainnet and testnet
     constructor( uint256 _chain_id)
     public
     {

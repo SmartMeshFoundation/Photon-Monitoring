@@ -67,10 +67,11 @@ type Config struct {
 	IgnoreMediatedNodeRequest bool // true: this node will ignore any mediated transfer who's target is not me.
 	EnableHealthCheck         bool //send ping periodically?
 	XMPPServer                string
-	IsMeshNetwork             bool   //is mesh now?
 	PfsHost                   string // pathfinder server host
 	HTTPUsername              string
 	HTTPPassword              string
+	PmsHost                   string // pms server host
+	PmsAddress                common.Address
 }
 
 //DefaultConfig default config
@@ -96,16 +97,6 @@ type ConditionQuit struct {
 	QuitEvent  string //name match
 	IsBefore   bool   //quit before event occur
 	RandomQuit bool   //random exit
-}
-
-/*
-TreatRefundTransferAsNormalMediatedTransfer When refund occurs in the intermediary node,is it treated as a common mediatedtransfer(that is to delete handleSecret in photonservice)?
-todo remove?
-*/
-var TreatRefundTransferAsNormalMediatedTransfer = true
-
-func init() {
-
 }
 
 //DefaultDataDir default work directory

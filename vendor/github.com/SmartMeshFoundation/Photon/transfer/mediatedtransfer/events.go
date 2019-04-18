@@ -5,6 +5,7 @@ import (
 
 	"math/big"
 
+	"github.com/SmartMeshFoundation/Photon/rerr"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -27,10 +28,11 @@ type EventSendMediatedTransfer struct {
 	// because which channel receives MediatedTransfer and leads me to send a new Transfer
 	// If I am the transfer initiator, then FromChannel should be null.
 	FromChannel common.Hash
+	Path        []common.Address //2019-03 消息升级后,带全路径path
 }
 
 //NewEventSendMediatedTransfer create EventSendMediatedTransfer
-func NewEventSendMediatedTransfer(transfer *LockedTransferState, receiver common.Address) *EventSendMediatedTransfer {
+func NewEventSendMediatedTransfer(transfer *LockedTransferState, receiver common.Address, path []common.Address) *EventSendMediatedTransfer {
 	return &EventSendMediatedTransfer{
 		Token:          transfer.Token,
 		Amount:         new(big.Int).Set(transfer.Amount),
@@ -40,6 +42,7 @@ func NewEventSendMediatedTransfer(transfer *LockedTransferState, receiver common
 		Expiration:     transfer.Expiration,
 		Receiver:       receiver,
 		Fee:            transfer.Fee,
+		Path:           path,
 	}
 }
 
@@ -129,6 +132,7 @@ type EventSendAnnounceDisposed struct {
 	Expiration     int64
 	Token          common.Address
 	Receiver       common.Address
+	Reason         rerr.StandardError
 }
 
 /*
@@ -161,21 +165,21 @@ type EventContractSendRegisterSecret struct {
 }
 
 /*
-EventContractSendWithdraw emitted when the lock must be withdrawn on-chain.
+EventContractSendUnlock emitted when the lock must be withdrawn on-chain.
 上家不知什么原因要关闭channel，我一旦知道密码，应该立即到链上提现。
 channel 自己会关注是否要提现，但是如果是在关闭以后才获取到密码的呢？
 目前完全无用,如果 unlock 放在 settle 之后,还有可能有用.
 */
 /*
- *	EventContractSendWithdraw : emmited when the lock must be withdrwan on-chain.
- *
- *	Note that because this participant has no idea why the node ahead of him plans to close the channel,
- *	so once he has the secret, he should immediately register it on-chain.
- * 	Channel also checks whether there is withdraw occurred, but what if this participant receives secret after channel closed.
- *	Currently we have no need to consider that. If unlock is sent after settle, the secret might have any use.
- */
-type EventContractSendWithdraw struct {
-	Transfer          *LockedTransferState
+EventContractSendUnlock : emmited when the lock must be unlock on-chain.
+ 当一个密码在链上注册成功以后,这时候自己(接收方)必须判断通道是否关闭,因为如果已经关闭,
+说明自己已经提交过updateBalanceProof,并且在合约上调用过相关的unlock,当然肯定unlock失败了.
+
+比如A-B-C交易,A可能在交易未完成的时候就关闭通道,当B拿到了C的密码以后,B实际上已经在链上提交过BalanceProof,并且调用过相关的unlock.
+这时候B的unlock肯定是失败的,因为还没有注册密码.
+*/
+type EventContractSendUnlock struct {
+	LockSecretHash    common.Hash
 	ChannelIdentifier common.Hash
 }
 
@@ -227,6 +231,8 @@ type EventSaveFeeChargeRecord struct {
 	OutChannel     common.Hash    `json:"out_channel"` // 我付款的channelID
 	Fee            *big.Int       `json:"fee"`
 	Timestamp      int64          `json:"timestamp"` // 时间戳,time.Unix()
+	Data           string         `json:"data"`
+	BlockNumber    int64          `json:"block_number"`
 }
 
 func init() {
@@ -236,7 +242,7 @@ func init() {
 	gob.Register(&EventSendSecretRequest{})
 	gob.Register(&EventSendAnnounceDisposed{})
 	gob.Register(&EventContractSendRegisterSecret{})
-	gob.Register(&EventContractSendWithdraw{})
+	gob.Register(&EventContractSendUnlock{})
 	gob.Register(&EventUnlockSuccess{})
 	gob.Register(&EventUnlockFailed{})
 	gob.Register(&EventWithdrawSuccess{})

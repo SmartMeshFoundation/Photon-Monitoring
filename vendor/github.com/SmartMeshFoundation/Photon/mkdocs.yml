@@ -1,0 +1,49 @@
+site_name: PhotonNetwork
+pages:
+-  Photon Developer Site: index.md
+-  System Requirements and Installation Guide: installation_guide.md
+- Photon Messages Specification: Photon_Messages_Specification.md
+-  Photon Contract Specification: contract_spec.md
+-  Photon’s API Documentation: rest_api.md
+-  Photon’s Mobile API Documentation: mobie.md
+-  Photon Monitoring Service: sm_service.md
+-  Photon Pathfinding Service Specification: pfs.md
+-  Matrixregservice: matrix.md
+-  Photon Glossary: glossary.md
+-  PhotonUsage scene description: UsageSceneDescription.md
+
+theme:
+    name: readthedocs
+
+extra_javascript:
+  - js/mermaid.min.js
+  - https://cdnjs.cloudflare.com/ajax/libs/raphael/2.2.7/raphael.min.js
+  - https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js
+  - https://cdnjs.cloudflare.com/ajax/libs/js-sequence-diagrams/1.0.6/sequence-diagram-min.js
+  - https://cdnjs.cloudflare.com/ajax/libs/flowchart/1.6.5/flowchart.min.js
+  - js/umlconvert.js
+
+markdown_extensions:
+  - toc
+  - smarty 
+  - pymdownx.arithmatex
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.inlinehilite
+  - pymdownx.magiclink
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences: [
+        {name: flow, class: uml-flowchart}
+        ,{name: sequence, class: uml-sequence-diagram}
+        ,{name: mermaid, class: uml-mermaid}
+      ]
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+plugins:
+  - search
