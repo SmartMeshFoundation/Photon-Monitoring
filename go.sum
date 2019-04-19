@@ -195,6 +195,8 @@ github.com/nkbai/Photon v0.0.0-20181109014810-8489022f7401 h1:MQ3X91pPo9kjSgQl1j
 github.com/nkbai/Photon v0.0.0-20181109014810-8489022f7401/go.mod h1:Bocros/ZqjOkkOLadb8R2jccWKtaKkh6YhIiGzRudiU=
 github.com/nkbai/Photon v1.2.0-rc0 h1:l9g/+/8jpM/vJdDMV+0v9+nrHe1udEeoUkuZrG8/ow8=
 github.com/nkbai/Photon v1.2.0-rc0/go.mod h1:T1NdnPzAaVMIAELGnnG0NhDAQMv9UjjqgCZDNlxy/Rg=
+github.com/nkbai/Photon v1.2.0-rc6 h1:8eR0vdNX3J1hiXftFkkZIy9mTtVaale/QGzwE4hlvkY=
+github.com/nkbai/Photon v1.2.0-rc6/go.mod h1:T1NdnPzAaVMIAELGnnG0NhDAQMv9UjjqgCZDNlxy/Rg=
 github.com/nkbai/go-ethereum v0.1.1 h1:5z7fVrdoC782sBXJKcyP2w4Mc62u4jzCzeT4gqkMrFQ=
 github.com/nkbai/go-ethereum v0.1.1/go.mod h1:bo5RkAqiAkgEOrbHsB/mynF351scb8qu26X/9FvvR5Q=
 github.com/nkbai/go-ethereum v0.1.2 h1:ob+P0SKSlhM6nyPNUvzd7xNKWKAfe2H6bFFTbneOcWk=
@@ -220,6 +222,7 @@ github.com/pierrec/lz4 v2.0.5+incompatible/go.mod h1:pdkljMzZIN41W+lC3N2tnIh5sFi
 github.com/pkg/errors v0.0.0-20171216070316-e881fd58d78e/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/term v0.0.0-20180730021639-bffc007b7fd5/go.mod h1:eCbImbZ95eXtAUIbLAuAVnBnwf83mjf6QIVH8SHYwqQ=
+github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/prometheus/client_golang v0.0.0-20171201122222-661e31bf844d/go.mod h1:7SWBe2y4D6OKWSNQJUaRYU/AaXPKyh/dDVn+NZz0KFw=
 github.com/prometheus/client_golang v0.9.0/go.mod h1:7SWBe2y4D6OKWSNQJUaRYU/AaXPKyh/dDVn+NZz0KFw=
@@ -252,6 +255,7 @@ github.com/spf13/pflag v1.0.3/go.mod h1:DYY7MBk1bdzusC3SYhjObp+wFpr4gzcvqqNjLnIn
 github.com/spf13/viper v1.2.1/go.mod h1:P4AexN0a+C9tGAnUFNwDMYYZv3pjFuvmeiMyKRaNVlI=
 github.com/stretchr/testify v0.0.0-20170809224252-890a5c3458b4/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/stretchr/testify v1.2.1/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
+github.com/stretchr/testify v1.2.2 h1:bSDNvY7ZPG5RlJ8otE/7V6gMiyenm9RtJ7IUVIAoJ1w=
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/syndtr/goleveldb v0.0.0-20180708030551-c4c61651e9e3/go.mod h1:Z4AUp2Km+PwemOoO/VB5AOx9XSsIItzFjoJlOSiYmn0=
 github.com/syndtr/goleveldb v0.0.0-20181105012736-f9080354173f h1:EEVjSRihF8NIbfyCcErpSpNHEKrY3s8EAwqiPENZZn8=
