@@ -51,17 +51,17 @@ type ChainEvents struct {
 //NewChainEvents create chain events
 func NewChainEvents(key *ecdsa.PrivateKey, client *helper.SafeEthClient, tokenNetworkRegistryAddress common.Address, db *models.ModelDB) *ChainEvents {
 	log.Trace(fmt.Sprintf("tokenNetworkRegistryAddress %s", tokenNetworkRegistryAddress.String()))
-	bcs, err := rpc.NewBlockChainService(key, tokenNetworkRegistryAddress, client,&notify.Handler{},&mockTxInfoDao{})
+	bcs, err := rpc.NewBlockChainService(key, tokenNetworkRegistryAddress, client, &notify.Handler{}, &mockTxInfoDao{})
 	if err != nil {
 		panic(err)
 	}
-	_,err = bcs.Registry(tokenNetworkRegistryAddress, true)
+	_, err = bcs.Registry(tokenNetworkRegistryAddress, true)
 	if err != nil {
 		panic("startup error : cannot get registry")
 	}
 	return &ChainEvents{
 		client:          client,
-		be:              blockchain.NewBlockChainEvents(client, bcs,&mockChainEventRecordDao{}),
+		be:              blockchain.NewBlockChainEvents(client, bcs, &mockChainEventRecordDao{}),
 		bcs:             bcs,
 		key:             key,
 		db:              db,
@@ -134,6 +134,7 @@ func (ce *ChainEvents) handleClosedStateChange(st2 *mediatedtransfer.ContractClo
 		}
 	} else {
 		if ds == nil { //没有什么要做的
+			log.Trace(fmt.Sprintf("%s closed, but no related delegate", st2.ChannelIdentifier.String()))
 			return
 		}
 		tokenNetwork, err := ce.bcs.TokenNetwork(ds[0].TokenAddress)
@@ -169,20 +170,19 @@ func (ce *ChainEvents) handleClosedStateChange(st2 *mediatedtransfer.ContractClo
 			//无论有没有punish都要更新d,否则settle blocknumber会是错的
 			ce.db.DelegateSave(d)
 			//只有 punish, 没有 BalanceProof 的委托也是允许的
-			if d.Content.UpdateTransfer.Nonce > 0 {
-				/*
-					close 一方是不需要第三方代理来 UpdateBalanceProof 和 Withdraw 的,他自己会做.
-				*/
-				if d.Address == st2.ClosingAddress {
-					//if the delegator closed this channel, dont need update
-					d.Status = models.DelegateStatusSuccessFinishedByOther
-					d.Error = "delegator closed channel"
-					ce.db.DelegateSave(d)
-					continue
-				}
-				//持有的锁会在updateBalanceProof的同时进行解锁.无需专门添加时间.
-				log.Info(fmt.Sprintf("%s will updatedTransfer @ %d,closedBlock=%d", utils.Pex(d.Key), settleBlockNumber-uint64(params.RevealTimeout), st2.ClosedBlock))
+
+			/*
+				close 一方是不需要第三方代理来 UpdateBalanceProof 和 Withdraw 的,他自己会做.
+			*/
+			if d.Address == st2.ClosingAddress {
+				//if the delegator closed this channel, dont need update
+				d.Status = models.DelegateStatusSuccessFinishedByOther
+				d.Error = "delegator closed channel"
+				ce.db.DelegateSave(d)
+				continue
 			}
+			//持有的锁会在updateBalanceProof的同时进行解锁.无需专门添加时间.
+			log.Info(fmt.Sprintf("%s will updatedTransfer @ %d,closedBlock=%d", utils.Pex(d.Key), settleBlockNumber-uint64(params.RevealTimeout), st2.ClosedBlock))
 		}
 	}
 }
@@ -498,7 +498,7 @@ func (ce *ChainEvents) doPunishes(d *models.Delegate) error {
 }
 func (ce *ChainEvents) doUpdateTransfer(d *models.Delegate) error {
 	//现在是不论什么情况都会安排update,失败则记录下来,所以可能会出现没有有效的balanceProof的情况
-	if d.Content.UpdateTransfer.Nonce<=0{
+	if d.Content.UpdateTransfer.Nonce <= 0 {
 		return nil
 	}
 	channelAddr := common.BytesToHash(d.ChannelIdentifier)
