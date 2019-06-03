@@ -3,8 +3,11 @@ package models
 import (
 	"bytes"
 	"encoding/gob"
+	"fmt"
 	"time"
 
+	utils2 "github.com/SmartMeshFoundation/Photon-Monitoring/utils"
+	"github.com/SmartMeshFoundation/Photon/log"
 	"github.com/SmartMeshFoundation/Photon/utils"
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -98,6 +101,7 @@ dao
 
 // SaveDelegateExecuteRecord :
 func (model *ModelDB) SaveDelegateExecuteRecord(r *DelegateExecuteRecord) {
+	log.Trace(fmt.Sprintf("NewDelegateExecuteRecord :\n%s", utils2.ToJSONStringFormat(r)))
 	err := model.db.Save(r).Error
 	if err != nil {
 		panic(err)

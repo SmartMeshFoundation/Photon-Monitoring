@@ -364,10 +364,10 @@ func (ce *ChainEvents) doDelegateUpdateBalanceProof(d *models.Delegate) {
 		d.Status = models.DelegateStatusFailed
 		d.Error = r.Error
 		ce.db.UpdateObject(d)
-		log.Error("delegate [channel=%s delegator=%s] UpdateTransfer called Failed : %s", d.ChannelIdentifierStr, d.DelegatorAddressStr, utils.StringInterface(du, 3))
+		log.Error(fmt.Sprintf("delegate [channel=%s delegator=%s] UpdateTransfer called Failed : %s", d.ChannelIdentifierStr, d.DelegatorAddressStr, utils.StringInterface(du, 3)))
 		return
 	}
-	log.Info("delegate [channel=%s delegator=%s] UpdateTransfer called SUCCESS", d.ChannelIdentifierStr, d.DelegatorAddressStr)
+	log.Info(fmt.Sprintf("delegate [channel=%s delegator=%s] UpdateTransfer called SUCCESS", d.ChannelIdentifierStr, d.DelegatorAddressStr))
 	// 3. 扣除
 	err = ce.db.AccountUseSmt(d.DelegatorAddress(), params.SmtUpdateTransfer)
 	if err != nil {
@@ -431,7 +431,7 @@ func (ce *ChainEvents) doDelegateUnlocks(d *models.Delegate) {
 	// 0. 获取DelegateUpdateBalanceProof及DelegateUnlocks及DelegateAnnounceDispose
 	dus := d.Unlocks()
 	if len(dus) == 0 {
-		log.Info("delegate [channel=%s delegator=%s] Unlock no need ", d.ChannelIdentifierStr, d.DelegatorAddressStr)
+		log.Info(fmt.Sprintf("delegate [channel=%s delegator=%s] Unlock no need ", d.ChannelIdentifierStr, d.DelegatorAddressStr))
 		return
 	}
 	das, err := ce.db.GetDelegateAnnounceDisposeListByDelegateKey(d.Key)
@@ -475,10 +475,10 @@ func (ce *ChainEvents) doDelegateUnlocks(d *models.Delegate) {
 			d.Status = models.DelegateStatusFailed
 			d.Error = "unlock all failed"
 		}
-		log.Error("delegate [channel=%s delegator=%s] Unlock called Failed : %s", d.ChannelIdentifierStr, d.DelegatorAddressStr, utils.StringInterface(dus, 3))
+		log.Error(fmt.Sprintf("delegate [channel=%s delegator=%s] Unlock called Failed : %s", d.ChannelIdentifierStr, d.DelegatorAddressStr, utils.StringInterface(dus, 3)))
 	} else {
 		d.Status = models.DelegateStatusSuccessFinished
-		log.Info("delegate [channel=%s delegator=%s] Unlock called SUCCESS", d.ChannelIdentifierStr, d.DelegatorAddressStr)
+		log.Info(fmt.Sprintf("delegate [channel=%s delegator=%s] Unlock called SUCCESS", d.ChannelIdentifierStr, d.DelegatorAddressStr))
 	}
 	ce.db.UpdateObject(d)
 }
@@ -489,6 +489,7 @@ func (ce *ChainEvents) doUnlock(d *models.Delegate, du *models.DelegateUnlock, t
 
 	for _, da := range das {
 		if da.LockSecretHash() == du.LockSecretHash() {
+			r.Status = models.ExecuteStatusSuccessFinished
 			r.Error = fmt.Sprintf("give up by AnnounceDispose")
 			return
 		}
@@ -542,7 +543,7 @@ func (ce *ChainEvents) doDelegatePunishes(d *models.Delegate) {
 		panic(err)
 	}
 	if len(dps) == 0 {
-		log.Info("delegate [channel=%s delegator=%s] Punish no need ", d.ChannelIdentifierStr, d.DelegatorAddressStr)
+		log.Info(fmt.Sprintf("delegate [channel=%s delegator=%s] Punish no need ", d.ChannelIdentifierStr, d.DelegatorAddressStr))
 		return
 	}
 	// 1. 锁定费用
@@ -559,6 +560,7 @@ func (ce *ChainEvents) doDelegatePunishes(d *models.Delegate) {
 		if hasSuccess {
 			//无需继续执行,保存记录
 			r := models.NewDelegateExecuteRecord(d, models.DelegateTypePunish, dp)
+			r.Status = models.ExecuteStatusSuccessFinished
 			r.Error = "no need because already punish success"
 			ce.db.SaveDelegateExecuteRecord(r)
 			continue
@@ -575,7 +577,7 @@ func (ce *ChainEvents) doDelegatePunishes(d *models.Delegate) {
 		if err != nil {
 			log.Error(fmt.Sprintf("db AccountUseSmt err : %s", err.Error()))
 		}
-		log.Info("delegate [channel=%s delegator=%s] Punish called SUCCESS", d.ChannelIdentifierStr, d.DelegatorAddressStr)
+		log.Info(fmt.Sprintf("delegate [channel=%s delegator=%s] Punish called SUCCESS", d.ChannelIdentifierStr, d.DelegatorAddressStr))
 	} else {
 		// 失败解锁费用并更新delegate
 		err = ce.db.AccountUnlockSmt(d.DelegatorAddress(), params.SmtPunish)
@@ -585,7 +587,7 @@ func (ce *ChainEvents) doDelegatePunishes(d *models.Delegate) {
 		d.Status = models.DelegateStatusFailed
 		d.Error = "punish all failed"
 		ce.db.UpdateObject(d)
-		log.Error("delegate [channel=%s delegator=%s] Unlock called Failed : %s", d.ChannelIdentifierStr, d.DelegatorAddressStr, utils.StringInterface(dps, 3))
+		log.Error(fmt.Sprintf("delegate [channel=%s delegator=%s] Unlock called Failed : %s", d.ChannelIdentifierStr, d.DelegatorAddressStr, utils.StringInterface(dps, 3)))
 	}
 }
 

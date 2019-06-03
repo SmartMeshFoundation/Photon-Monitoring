@@ -58,6 +58,7 @@ func OpenDb(dbPath string) (model *ModelDB, err error) {
 	model.db.AutoMigrate(&DelegateMonitor{})
 	model.db.AutoMigrate(&ReceivedTransfer{})
 	model.db.AutoMigrate(&lastBlockNumber{})
+	model.db.AutoMigrate(&DelegateExecuteRecord{})
 
 	return
 }
