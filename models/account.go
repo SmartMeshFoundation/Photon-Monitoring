@@ -3,65 +3,90 @@ package models
 import (
 	"math/big"
 
+	"github.com/jinzhu/gorm"
+
 	"fmt"
 
 	"github.com/SmartMeshFoundation/Photon/utils"
-	"github.com/asdine/storm"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/gommon/log"
 )
 
 //Account save available smt
 type Account struct {
-	Address          []byte   `storm:"id"`
+	Address          []byte
 	TotalReceivedSmt *big.Int //单增
 	UsedSmt          *big.Int //单增
 	LockedSmt        *big.Int //执行之前先锁定,成功的话,则减去响应的 smt,否则应该退还.
-	NeedSmt          *big.Int //还需要多少 smt, 才能执行所有提交的 tx,供查询,不是计费的依据
+	// TODO NeedSmt该值会在一个锁对应的DelegateUnlock及DelegateAnnounceDispose同时存在时产生误差,暂时没处理
+	NeedSmt *big.Int //还需要多少 smt, 才能执行所有提交的 tx,供查询,不是计费的依据,
 }
 
 func (a *Account) String() string {
 	return fmt.Sprintf("addr=%s,total=%s,used=%s,locked=%s,need=%s", common.BytesToAddress(a.Address).String(),
 		a.TotalReceivedSmt, a.UsedSmt, a.LockedSmt, a.NeedSmt)
 }
+func (a *Account) toSerialization() *accountSerialization {
+	return &accountSerialization{
+		Address:               a.Address,
+		TotalReceivedSmtBytes: a.TotalReceivedSmt.Bytes(),
+		UsedSmtBytes:          a.UsedSmt.Bytes(),
+		LockedSmtBytes:        a.LockedSmt.Bytes(),
+		NeedSmtBytes:          a.NeedSmt.Bytes(),
+	}
+}
+
+type accountSerialization struct {
+	Address               []byte `gorm:"primary_key"`
+	TotalReceivedSmtBytes []byte
+	UsedSmtBytes          []byte
+	LockedSmtBytes        []byte
+	NeedSmtBytes          []byte
+}
+
+func (al *accountSerialization) toAccount() *Account {
+	return &Account{
+		Address:          al.Address,
+		TotalReceivedSmt: new(big.Int).SetBytes(al.TotalReceivedSmtBytes),
+		UsedSmt:          new(big.Int).SetBytes(al.UsedSmtBytes),
+		LockedSmt:        new(big.Int).SetBytes(al.LockedSmtBytes),
+		NeedSmt:          new(big.Int).SetBytes(al.NeedSmtBytes),
+	}
+}
 
 /*
 AccountAddSmt account receive new deposit,amount must be positive
 */
 func (model *ModelDB) AccountAddSmt(addr common.Address, amount *big.Int) {
-	var err error
-	var a = &Account{}
-	err = model.db.One("Address", addr[:], a)
-	if err == storm.ErrNotFound {
-		a = &Account{
-			Address:          addr[:],
-			TotalReceivedSmt: big.NewInt(0),
-			UsedSmt:          big.NewInt(0),
-			LockedSmt:        big.NewInt(0),
-			NeedSmt:          big.NewInt(0),
-		}
+	var al = &accountSerialization{}
+	al.Address = addr[:]
+	err := model.db.Where(al).Find(al).Error
+	if err == gorm.ErrRecordNotFound {
 		model.lock.Lock()
-		err = model.db.Save(a)
+		err = model.db.Save(al).Error
 		if err != nil {
 			log.Error(fmt.Sprintf("AccountAddSmt new account err %s", err))
 		}
 		model.lock.Unlock()
 	}
+	a := al.toAccount()
 	a.TotalReceivedSmt.Add(a.TotalReceivedSmt, amount)
 	model.accountSanity(a)
-	err = model.db.UpdateField(a, "TotalReceivedSmt", a.TotalReceivedSmt)
+	al = a.toSerialization()
+	err = model.db.Model(al).UpdateColumn("TotalReceivedSmtBytes", al.TotalReceivedSmtBytes).Error
 	if err != nil {
-		panic(fmt.Sprintf("save account err %s", err))
+		panic(fmt.Sprintf("save account err %s", err.Error()))
 	}
 	log.Info(fmt.Sprintf("receive smt %s,now total=%s", amount, a.TotalReceivedSmt))
 }
+
 func (model *ModelDB) accountUpdateNeedSmt(addr common.Address, amount *big.Int) {
 	a := model.AccountGetAccount(addr)
 	a.NeedSmt = new(big.Int).Set(amount)
 	model.accountSanity(a)
-	err := model.db.Save(a)
+	err := model.db.Save(a.toSerialization()).Error
 	if err != nil {
-		panic(fmt.Sprintf("save account err %s", err))
+		panic(fmt.Sprintf("save account err %s", err.Error()))
 	}
 }
 
@@ -94,7 +119,7 @@ func (model *ModelDB) AccountLockSmt(addr common.Address, amount *big.Int) error
 	a.LockedSmt.Add(a.LockedSmt, amount)
 	a.NeedSmt.Sub(a.NeedSmt, amount)
 	model.accountSanity(a)
-	err := model.db.Save(a)
+	err := model.db.Save(a.toSerialization()).Error
 	return err
 }
 
@@ -106,7 +131,7 @@ func (model *ModelDB) AccountUnlockSmt(addr common.Address, amount *big.Int) err
 	}
 	a.LockedSmt.Sub(a.LockedSmt, amount)
 	model.accountSanity(a)
-	err := model.db.Save(a)
+	err := model.db.Save(a.toSerialization()).Error
 	return err
 }
 
@@ -119,28 +144,36 @@ func (model *ModelDB) AccountUseSmt(addr common.Address, amount *big.Int) error 
 	a.LockedSmt.Sub(a.LockedSmt, amount)
 	a.UsedSmt.Add(a.UsedSmt, amount)
 	model.accountSanity(a)
-	err := model.db.Save(a)
+	err := model.db.Save(a.toSerialization()).Error
 	return err
 }
 
 //AccountGetAccount returns account info
 func (model *ModelDB) AccountGetAccount(addr common.Address) *Account {
-	var a = &Account{}
-	err := model.db.One("Address", addr[:], a)
-	if err == storm.ErrNotFound {
-		a = &Account{
-			Address:          addr[:],
-			TotalReceivedSmt: big.NewInt(0),
-			UsedSmt:          big.NewInt(0),
-			LockedSmt:        big.NewInt(0),
-			NeedSmt:          big.NewInt(0),
-		}
-		return a
+	var a = &accountSerialization{}
+	a.Address = addr[:]
+	err := model.db.Where(a).Find(a).Error
+	if err == gorm.ErrRecordNotFound {
+		err = nil
 	}
 	if err != nil {
-		panic(fmt.Sprintf("getAccount addr %s err %s", utils.APex(addr), err))
+		log.Error(err.Error())
 	}
-	return a
+	return a.toAccount()
+}
+
+//GetAccountInTx returns account info with t
+func GetAccountInTx(tx *gorm.DB, addr common.Address) *Account {
+	var a = &accountSerialization{}
+	a.Address = addr[:]
+	err := tx.Where(a).Find(a).Error
+	if err == gorm.ErrRecordNotFound {
+		err = nil
+	}
+	if err != nil {
+		log.Error(err.Error())
+	}
+	return a.toAccount()
 }
 
 func (model *ModelDB) accountSanity(a *Account) {

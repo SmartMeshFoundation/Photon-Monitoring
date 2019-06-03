@@ -23,6 +23,6 @@ func SetupTestDb(t *testing.T) (model *ModelDB) {
 		t.Error(err)
 		return
 	}
-	t.Log(model.db)
+	//t.Log(model.db)
 	return
 }

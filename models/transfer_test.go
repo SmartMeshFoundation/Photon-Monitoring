@@ -22,21 +22,21 @@ func TestModelDB_NewReceivedTransfer(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	assert.Equal(t, r.FromAddress, taddr)
-	assert.Equal(t, r.ChannelIdentifier, caddr)
+	assert.Equal(t, r.FromAddress(), taddr)
+	assert.Equal(t, r.ChannelIdentifier(), caddr)
 	assert.EqualValues(t, r.Nonce, 3)
-	assert.EqualValues(t, r.Amount, big.NewInt(10))
+	assert.EqualValues(t, r.Amount(), big.NewInt(10))
 
 	m.NewReceivedTransfer(3, caddr, openBlockNumber, taddr, taddr, 4, big.NewInt(10))
 	m.NewReceivedTransfer(5, caddr, openBlockNumber, taddr, taddr, 6, big.NewInt(10))
 
-	trs, err := m.GetReceivedTransferInBlockRange(0, 3)
+	trs, err := m.GetReceivedTransferInBlockRange(0, 4)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 	assert.EqualValues(t, len(trs), 2)
-	trs, err = m.GetReceivedTransferInBlockRange(0, 5)
+	trs, err = m.GetReceivedTransferInBlockRange(0, 6)
 	if err != nil {
 		t.Error(err)
 		return

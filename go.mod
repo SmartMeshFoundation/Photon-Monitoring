@@ -12,10 +12,12 @@ replace (
 
 require (
 	github.com/SmartMeshFoundation/Photon v0.9.3
+	github.com/SmartMeshFoundation/Spectrum v0.0.0-20190124055011-77d9bf969c1b
 	github.com/ant0ine/go-json-rest v3.3.2+incompatible
 	github.com/asdine/storm v2.1.1+incompatible
 	github.com/coreos/bbolt v1.3.1-coreos.6
 	github.com/ethereum/go-ethereum v1.8.17
+	github.com/jinzhu/gorm v1.9.8
 	github.com/labstack/gommon v0.2.7
 	github.com/mattn/go-colorable v0.1.0
 	github.com/stretchr/testify v1.2.2

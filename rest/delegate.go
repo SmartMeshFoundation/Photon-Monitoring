@@ -11,7 +11,7 @@ import (
 )
 
 /*
-Delegate 提交委托
+BakDelegate 提交委托
 提交委托包含两个部分，一个是 UpdateTransfer，一个是 WithDraw
 SM 应该校验用户提交信息,比如签名是否正确, nonce 是否比上一次的更大等,
 对于 withdraw 部分,应该校验Secret 是否正确,对应的 hashlock 是否在 lockroot 中包含等.
@@ -98,7 +98,7 @@ func Delegate(w rest.ResponseWriter, r *rest.Request) {
 			return
 		}
 	}
-	err = db.DelegateNewOrUpdateDelegate(req, delegater)
+	err = db.ReceiveDelegate(req, delegater)
 	if err != nil {
 		log.Error(err.Error())
 		err2 = w.WriteJson(&delegateResponse{

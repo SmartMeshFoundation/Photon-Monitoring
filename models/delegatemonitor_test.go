@@ -1,20 +1,26 @@
 package models
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/SmartMeshFoundation/Photon-Monitoring/params"
+
+	"github.com/SmartMeshFoundation/Photon/utils"
+)
 
 func TestModelDB_DelegateMonitorAdd(t *testing.T) {
 	m := SetupTestDb(t)
-	_, err := m.DelegateMonitorGet(3)
+	startBlock := int64(10000 - params.RevealTimeout)
+	_, err := m.GetDelegateMonitorList(startBlock)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	err = m.DelegateMonitorAdd(3, []byte("123"))
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	ds, err := m.DelegateMonitorGet(3)
+	m.AddDelegateMonitor(&Delegate{
+		SettleBlockNumber: 10000,
+		Key:               utils.NewRandomHash().Bytes(),
+	})
+	ds, err := m.GetDelegateMonitorList(startBlock)
 	if err != nil {
 		t.Error(err)
 		return

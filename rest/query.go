@@ -3,6 +3,8 @@ package restful
 import (
 	"fmt"
 
+	"github.com/SmartMeshFoundation/Photon/dto"
+
 	"math/big"
 
 	"github.com/SmartMeshFoundation/Photon-Monitoring/models"
@@ -44,39 +46,72 @@ Get /\<delegater\>/channel/<channel_address>
 }
 */
 func Tx(w rest.ResponseWriter, r *rest.Request) {
-	var err2 error
+	var err error
 	delegaterStr := r.PathParam("delegater")
 	channel := r.PathParam("channel")
 	delegater := common.HexToAddress(delegaterStr)
 	if delegater == utils.EmptyAddress || channel == utils.EmptyAddress.String() {
-		err2 = w.WriteJson(&txResponse{
-			Status: delegateError,
-			Error:  "arg error",
+		err = w.WriteJson(&dto.APIResponse{
+			ErrorCode: delegateError,
+			ErrorMsg:  "arg error",
 		})
 		return
 	}
 	channelIdentifier := common.HexToHash(channel)
-	d := db.DelegatetGet(channelIdentifier, delegater)
-	res := &txResponse{
-		Delegate: d,
+	delegateKey := models.BuildDelegateKey(channelIdentifier, delegater)
+	// delegate
+	d, err := db.GetDelegateByKey(delegateKey)
+	if err != nil {
+		err = w.WriteJson(&dto.APIResponse{
+			ErrorCode: delegateError,
+			ErrorMsg:  fmt.Sprintf("db GetDelegateByKey err : %s", err.Error()),
+		})
+		return
 	}
+	// DelegatePunishList
+	dps, err := db.GetDelegatePunishListByDelegateKey(delegateKey)
+	if err != nil {
+		err = w.WriteJson(&dto.APIResponse{
+			ErrorCode: delegateError,
+			ErrorMsg:  fmt.Sprintf("db GetDelegateUpdateBalanceProofByDelegateKey err : %s", err.Error()),
+		})
+		return
+	}
+	// DelegateAnnounceDisposeList
+	das, err := db.GetDelegateAnnounceDisposeListByDelegateKey(delegateKey)
+	if err != nil {
+		err = w.WriteJson(&dto.APIResponse{
+			ErrorCode: delegateError,
+			ErrorMsg:  fmt.Sprintf("db GetDelegateUpdateBalanceProofByDelegateKey err : %s", err.Error()),
+		})
+		return
+	}
+	res := dto.NewAPIResponse(nil, &delegateInfoResponse{
+		Delegate:                   d,
+		DelegateUpdateBalanceProof: d.UpdateBalanceProof(),
+		DelegateUnlocks:            d.Unlocks(),
+		DelegatePunishes:           dps,
+		DelegateAnnounceDispose:    das,
+	})
 
 	if db.AccountIsBalanceEnough(delegater) {
-		res.Status = delegateSuccess
+		res.ErrorCode = delegateSuccess
 	} else {
-		res.Status = delegateSuccessButNotEnoughBalance
+		res.ErrorCode = delegateSuccessButNotEnoughBalance
 	}
 
-	err2 = w.WriteJson(res)
-	if err2 != nil {
-		log.Error(fmt.Sprintf("write json err %s", err2))
+	err = w.WriteJson(res)
+	if err != nil {
+		log.Error(fmt.Sprintf("write json err %s", err))
 	}
 }
 
-type txResponse struct {
-	Status   int
-	Error    string
-	Delegate *models.Delegate
+type delegateInfoResponse struct {
+	Delegate                   *models.Delegate                   `json:"delegate"`
+	DelegateUpdateBalanceProof *models.DelegateUpdateBalanceProof `json:"delegate_update_balance_proof"`
+	DelegateUnlocks            []*models.DelegateUnlock           `json:"delegate_unlocks"`
+	DelegatePunishes           []*models.DelegatePunish           `json:"delegate_punishes"`
+	DelegateAnnounceDispose    []*models.DelegateAnnounceDispose  `json:"delegate_announce_dispose"`
 }
 
 /*

@@ -71,8 +71,8 @@ func (s *Query) getNewTransfer() {
 	}
 	var maxBlock int64
 	for _, tr := range trs {
-		if tr.TokenAddress == params.SmtAddress && s.db.NewReceiveTransferFromReceiveTransfer(tr) {
-			s.db.AccountAddSmt(tr.FromAddress, tr.Amount)
+		if tr.TokenAddress() == params.SmtAddress && s.db.NewReceiveTransferFromReceiveTransfer(tr) {
+			s.db.AccountAddSmt(tr.FromAddress(), tr.Amount())
 		}
 		if tr.BlockNumber > maxBlock {
 			maxBlock = tr.BlockNumber

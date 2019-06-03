@@ -2,17 +2,23 @@ package models
 
 import (
 	"fmt"
-
 	"github.com/SmartMeshFoundation/Photon/log"
 )
 
-const bucketBlockNumber = "bucketBlockNumber"
-const keyBlockNumber = "blocknumber"
+const lastBlockNumberKey = "lastBlockNumberKey"
+
+type lastBlockNumber struct {
+	Key         string `gorm:"primary_key"`
+	BlockNumber int64
+}
 
 //GetLatestBlockNumber lastest block number
 func (model *ModelDB) GetLatestBlockNumber() int64 {
 	var number int64
-	err := model.db.Get(bucketBlockNumber, keyBlockNumber, &number)
+	lastBlockNumber := &lastBlockNumber{
+		Key: lastBlockNumberKey,
+	}
+	err := model.db.Where(lastBlockNumber).First(lastBlockNumber).Error
 	if err != nil {
 		log.Error(fmt.Sprintf("models GetLatestBlockNumber err=%s", err))
 	}
@@ -21,7 +27,10 @@ func (model *ModelDB) GetLatestBlockNumber() int64 {
 
 //SaveLatestBlockNumber block numer has been processed
 func (model *ModelDB) SaveLatestBlockNumber(blockNumber int64) {
-	err := model.db.Set(bucketBlockNumber, keyBlockNumber, blockNumber)
+	err := model.db.Save(&lastBlockNumber{
+		Key:         lastBlockNumberKey,
+		BlockNumber: blockNumber,
+	}).Error
 	if err != nil {
 		log.Error(fmt.Sprintf("models SaveLatestBlockNumber err=%s", err))
 	}
