@@ -56,27 +56,27 @@ type Delegate struct {
 	UnlocksGobBytes            []byte         `json:"-"`
 }
 
-// ChannelIdentifier :
+// ChannelIdentifier getter
 func (d *Delegate) ChannelIdentifier() common.Hash {
 	return common.HexToHash(d.ChannelIdentifierStr)
 }
 
-// TokenAddress :
+// TokenAddress getter
 func (d *Delegate) TokenAddress() common.Address {
 	return common.HexToAddress(d.TokenAddressStr)
 }
 
-// DelegatorAddress :
+// DelegatorAddress getter
 func (d *Delegate) DelegatorAddress() common.Address {
 	return common.HexToAddress(d.DelegatorAddressStr)
 }
 
-// PartnerAddress :
+// PartnerAddress getter
 func (d *Delegate) PartnerAddress() common.Address {
 	return common.HexToAddress(d.PartnerAddressStr)
 }
 
-// SetUpdateBalanceProof :
+// SetUpdateBalanceProof setter
 func (d *Delegate) SetUpdateBalanceProof(dubp *DelegateUpdateBalanceProof) {
 	var buf bytes.Buffer
 	encoder := gob.NewEncoder(&buf)
@@ -87,7 +87,7 @@ func (d *Delegate) SetUpdateBalanceProof(dubp *DelegateUpdateBalanceProof) {
 	d.UpdateBalanceProofGobBytes = buf.Bytes()
 }
 
-// UpdateBalanceProof :
+// UpdateBalanceProof getter
 func (d *Delegate) UpdateBalanceProof() *DelegateUpdateBalanceProof {
 	decoder := gob.NewDecoder(bytes.NewBuffer(d.UpdateBalanceProofGobBytes))
 	dubp := &DelegateUpdateBalanceProof{}
@@ -98,7 +98,7 @@ func (d *Delegate) UpdateBalanceProof() *DelegateUpdateBalanceProof {
 	return dubp
 }
 
-// SetUnlocks :
+// SetUnlocks setter
 func (d *Delegate) SetUnlocks(unlocks []*DelegateUnlock) {
 	var buf bytes.Buffer
 	encoder := gob.NewEncoder(&buf)
@@ -109,7 +109,7 @@ func (d *Delegate) SetUnlocks(unlocks []*DelegateUnlock) {
 	d.UnlocksGobBytes = buf.Bytes()
 }
 
-// Unlocks :
+// Unlocks getter
 func (d *Delegate) Unlocks() []*DelegateUnlock {
 	decoder := gob.NewDecoder(bytes.NewBuffer(d.UnlocksGobBytes))
 	var das []*DelegateUnlock
@@ -120,7 +120,7 @@ func (d *Delegate) Unlocks() []*DelegateUnlock {
 	return das
 }
 
-// NeedSMT :
+// NeedSMT getter
 func (d *Delegate) NeedSMT() *big.Int {
 	return utils.StringToBigInt(d.NeedSMTStr)
 }
@@ -145,7 +145,7 @@ func (d *Delegate) CalcNeedSMT(smt4Punish *big.Int) {
 dao
 */
 
-// GetDelegateByKey  :
+// GetDelegateByKey  query by primary_key
 func (model *ModelDB) GetDelegateByKey(key []byte) (d *Delegate, err error) {
 	d = &Delegate{}
 	err = model.db.Where(&Delegate{

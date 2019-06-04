@@ -12,19 +12,19 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-// ExecuteStatus :
+// ExecuteStatus 委托的具体操作的执行状态
 type ExecuteStatus int
 
 const (
-	//ExecuteStatusNotExecute Tx not start
+	//ExecuteStatusNotExecute 没有执行
 	ExecuteStatusNotExecute = iota
-	//ExecuteStatusSuccessFinished this tx success finished
+	//ExecuteStatusSuccessFinished success finished
 	ExecuteStatusSuccessFinished
-	//ExecuteStatusErrorFinished this tx finished with error
+	//ExecuteStatusErrorFinished finished with error
 	ExecuteStatusErrorFinished
 )
 
-// DelegateType :
+// DelegateType 委托类型,目前有3种
 type DelegateType int
 
 // #nosec
@@ -54,22 +54,22 @@ type DelegateExecuteRecord struct {
 	GobParams            []byte        `json:"params"`                 // 相关参数,gob编码,根据类型不同对应DelegateUpdateBalanceProof,DelegateUnlock,DelegatePunish三个结构体
 }
 
-// ChannelIdentifier :
+// ChannelIdentifier getter
 func (r *DelegateExecuteRecord) ChannelIdentifier() common.Hash {
 	return common.HexToHash(r.ChannelIdentifierStr)
 }
 
-// Delegator :
+// Delegator getter
 func (r *DelegateExecuteRecord) Delegator() common.Address {
 	return common.HexToAddress(r.DelegatorStr)
 }
 
-// TxHash :
+// TxHash getter
 func (r *DelegateExecuteRecord) TxHash() common.Hash {
 	return common.HexToHash(r.TxHashStr)
 }
 
-// NewDelegateExecuteRecord :
+// NewDelegateExecuteRecord 构造一条记录,params采用gob编码
 func NewDelegateExecuteRecord(d *Delegate, executeType DelegateType, params interface{}) *DelegateExecuteRecord {
 	var buf bytes.Buffer
 	e := gob.NewEncoder(&buf)
@@ -99,7 +99,7 @@ func NewDelegateExecuteRecord(d *Delegate, executeType DelegateType, params inte
 dao
 */
 
-// SaveDelegateExecuteRecord :
+// SaveDelegateExecuteRecord save to db
 func (model *ModelDB) SaveDelegateExecuteRecord(r *DelegateExecuteRecord) {
 	log.Trace(fmt.Sprintf("NewDelegateExecuteRecord :\n%s", utils2.ToJSONStringFormat(r)))
 	err := model.db.Save(r).Error

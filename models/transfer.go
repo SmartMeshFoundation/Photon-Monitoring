@@ -27,22 +27,22 @@ type ReceivedTransfer struct {
 	AmountStr            string `json:"amount"`
 }
 
-// ChannelIdentifier :
+// ChannelIdentifier getter
 func (rt *ReceivedTransfer) ChannelIdentifier() common.Hash {
 	return common.HexToHash(rt.ChannelIdentifierStr)
 }
 
-// TokenAddress :
+// TokenAddress getter
 func (rt *ReceivedTransfer) TokenAddress() common.Address {
 	return common.HexToAddress(rt.TokenAddressStr)
 }
 
-// FromAddress :
+// FromAddress getter
 func (rt *ReceivedTransfer) FromAddress() common.Address {
 	return common.HexToAddress(rt.FromAddressStr)
 }
 
-// Amount :
+// Amount getter
 func (rt *ReceivedTransfer) Amount() *big.Int {
 	return utils2.StringToBigInt(rt.AmountStr)
 }

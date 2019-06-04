@@ -19,7 +19,7 @@ const (
 	MonitorTypePunish                             // 惩罚
 )
 
-// DelegateMonitor :
+// DelegateMonitor 存储一次委托的触发时间点
 type DelegateMonitor struct {
 	Key         []byte `gorm:"primary_key"` // 随机生成,唯一
 	BlockNumber int64  `gorm:"index"`

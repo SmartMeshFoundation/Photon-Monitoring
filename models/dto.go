@@ -49,7 +49,7 @@ func (c *ChannelFor3rd) SetSettleBlockNumber(blockNumber int64) {
 	c.settleBlockNumber = blockNumber
 }
 
-// GetDelegateUpdateBalanceProof :
+// GetDelegateUpdateBalanceProof change UpdateTransfer to DelegateUpdateBalanceProof
 func (c *ChannelFor3rd) GetDelegateUpdateBalanceProof() *DelegateUpdateBalanceProof {
 	return &DelegateUpdateBalanceProof{
 		Nonce:               c.UpdateTransfer.Nonce,
@@ -61,7 +61,7 @@ func (c *ChannelFor3rd) GetDelegateUpdateBalanceProof() *DelegateUpdateBalancePr
 	}
 }
 
-// GetDelegateUnlocks :
+// GetDelegateUnlocks change Unlock to DelegateUnlock
 func (c *ChannelFor3rd) GetDelegateUnlocks() (dus []*DelegateUnlock) {
 	for _, u := range c.Unlocks {
 		dus = append(dus, &DelegateUnlock{

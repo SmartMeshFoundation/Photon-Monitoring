@@ -17,12 +17,12 @@ type DelegatePunish struct {
 	Signature         []byte `json:"signature"`
 }
 
-// LockHash :
+// LockHash getter
 func (dp *DelegatePunish) LockHash() common.Hash {
 	return common.HexToHash(dp.LockHashStr)
 }
 
-// AdditionalHash :
+// AdditionalHash getter
 func (dp *DelegatePunish) AdditionalHash() common.Hash {
 	return common.HexToHash(dp.AdditionalHashStr)
 }
@@ -31,7 +31,7 @@ func (dp *DelegatePunish) AdditionalHash() common.Hash {
 dao
 */
 
-// GetDelegatePunishListByDelegateKey :
+// GetDelegatePunishListByDelegateKey query by index
 func (model *ModelDB) GetDelegatePunishListByDelegateKey(delegateKey []byte) (dus []*DelegatePunish, err error) {
 	err = model.db.Where(&DelegatePunish{
 		DelegateKey: delegateKey,

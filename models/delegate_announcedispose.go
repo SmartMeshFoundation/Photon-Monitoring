@@ -13,7 +13,7 @@ type DelegateAnnounceDispose struct {
 	DelegateKey       []byte `json:"delegate_key" gorm:"index"` // 对应的photonDelegateKey
 }
 
-// LockSecretHash :
+// LockSecretHash getter
 func (da *DelegateAnnounceDispose) LockSecretHash() common.Hash {
 	return common.HexToHash(da.LockSecretHashStr)
 }
@@ -22,7 +22,7 @@ func (da *DelegateAnnounceDispose) LockSecretHash() common.Hash {
 dao
 */
 
-// GetDelegateAnnounceDisposeListByDelegateKey :
+// GetDelegateAnnounceDisposeListByDelegateKey query by primary_key
 func (model *ModelDB) GetDelegateAnnounceDisposeListByDelegateKey(delegateKey []byte) (das []*DelegateAnnounceDispose, err error) {
 	err = model.db.Where(&DelegateAnnounceDispose{
 		DelegateKey: delegateKey,

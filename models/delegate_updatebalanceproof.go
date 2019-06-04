@@ -21,17 +21,17 @@ type DelegateUpdateBalanceProof struct {
 	NonClosingSignature []byte `json:"non_closing_signature"`
 }
 
-// TransferAmount :
+// TransferAmount getter
 func (dubp *DelegateUpdateBalanceProof) TransferAmount() *big.Int {
 	return utils.StringToBigInt(dubp.TransferAmountStr)
 }
 
-// Locksroot :
+// Locksroot getter
 func (dubp *DelegateUpdateBalanceProof) Locksroot() common.Hash {
 	return common.HexToHash(dubp.LocksrootStr)
 }
 
-// ExtraHash :
+// ExtraHash getter
 func (dubp *DelegateUpdateBalanceProof) ExtraHash() common.Hash {
 	return common.HexToHash(dubp.ExtraHashStr)
 }

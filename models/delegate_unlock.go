@@ -19,12 +19,12 @@ type DelegateUnlock struct {
 	Signature         []byte `json:"signature"`
 }
 
-// LockSecretHash :
+// LockSecretHash getter
 func (du *DelegateUnlock) LockSecretHash() common.Hash {
 	return common.HexToHash(du.LockSecretHashStr)
 }
 
-// Amount :
+// Amount getter
 func (du *DelegateUnlock) Amount() *big.Int {
 	return utils.StringToBigInt(du.AmountStr)
 }
