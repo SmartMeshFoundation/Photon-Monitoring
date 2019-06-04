@@ -5,7 +5,7 @@ import (
 	"math/big"
 )
 
-// BigIntToString :
+// BigIntToString type convert
 func BigIntToString(b *big.Int) string {
 	if b == nil {
 		return "0"
@@ -13,7 +13,7 @@ func BigIntToString(b *big.Int) string {
 	return b.String()
 }
 
-// StringToBigInt :
+// StringToBigInt type convert
 func StringToBigInt(s string) *big.Int {
 	bi, b := new(big.Int).SetString(s, 10)
 	if !b {
@@ -22,7 +22,7 @@ func StringToBigInt(s string) *big.Int {
 	return bi
 }
 
-// ToJSONStringFormat :
+// ToJSONStringFormat for log
 func ToJSONStringFormat(v interface{}) string {
 	buf, err := json.MarshalIndent(v, "", "\t")
 	if err != nil {
