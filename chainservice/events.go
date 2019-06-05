@@ -278,6 +278,14 @@ func (ce *ChainEvents) handleStateChange(st transfer.StateChange) {
 }
 
 func (ce *ChainEvents) handleBlockNumber(n int64) {
+	lastBlockNumber:=ce.GetBlockNumber()
+	if lastBlockNumber!=0 && lastBlockNumber <n-1 {
+		//有可能通知的BlockNumber并不是严格连续的,比如1,3,4,7,跳过了5,6,除了启动以外,在正常情况下也有可能出现这种情形.
+		log.Info(fmt.Sprintf("not continue blocknumber last=%d,current=%d",lastBlockNumber,n))
+		for i:=lastBlockNumber+1;i<=n-1;i++{
+			ce.handleBlockNumber(i)
+		}
+	}
 	ce.blockNumber.Store(n)
 	monitors, err := ce.db.GetDelegateMonitorList(n)
 	if err != nil {
@@ -628,5 +636,9 @@ func (ce *ChainEvents) doPunish(d *models.Delegate, dp *models.DelegatePunish) (
 
 //GetBlockNumber return latest blocknumber of ethereum
 func (ce *ChainEvents) GetBlockNumber() int64 {
-	return ce.blockNumber.Load().(int64)
+	i:= ce.blockNumber.Load()
+	if i== nil{
+		return 0
+	}
+	return i.(int64)
 }
