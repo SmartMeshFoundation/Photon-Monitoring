@@ -171,6 +171,8 @@ func appendDelegateAnnounceDispose(tx *gorm.DB, delegateKey []byte, newAnnounceD
 		return
 	}
 	// 1. 查询已经存在的委托
+	//todo 可以不用查询委托是否存在,直接通过数据库的主键冲突来检测这种错误,避免加载所有的DelegateAnnounceDispose,
+	//然后后工比较
 	var all []*DelegateAnnounceDispose
 	err = tx.Where(&DelegateAnnounceDispose{
 		DelegateKey: delegateKey,

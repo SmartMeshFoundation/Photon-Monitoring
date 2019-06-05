@@ -9,6 +9,13 @@ import (
 DelegateAnnounceDispose 保存一次AnnounceDispose委托的相关数据
 */
 type DelegateAnnounceDispose struct {
+	/*
+	todo 直接以locksecrethash做为key是不合理的,比如
+	A尝试经过BC给D转账,失败以后,A走E-F给D转成功.
+		A-B-C-B-A-E-F-D
+	那么C给B的,B给A的AnnounceDisposed Key是相同的
+	punish也存在同样的情况
+	 */
 	LockSecretHashStr string `json:"secret_hash" gorm:"primary_key"`
 	DelegateKey       []byte `json:"delegate_key" gorm:"index"` // 对应的photonDelegateKey
 }

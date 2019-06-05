@@ -35,7 +35,9 @@ const (
 )
 
 /*
-DelegateExecuteRecord 保存委托的合约调用执行情况相关信息
+DelegateExecuteRecord 保存委托的合约调用执行情况相关信息,
+每次updateBalanceProof,unlock,punish调用,都对应一条记录,
+也就是说一个Delegate可能会对应很多条DelegateExecuteRecord
 */
 type DelegateExecuteRecord struct {
 	Key                  string        `json:"key" gorm:"primary_key"` // 主键,随机生成

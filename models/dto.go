@@ -75,7 +75,6 @@ func (c *ChannelFor3rd) GetDelegateUnlocks() (dus []*DelegateUnlock) {
 }
 
 //Punish 需要委托给第三方的 punish证据
-//todo punish和AnnouceDisposed可能会很多,运行一段时间以后很容易累积成百上千,甚至更多,因此这种直接保存在结构体中的并不合适,
 type Punish struct {
 	LockHash       common.Hash `json:"lock_hash"` //the whole lock's hash,not lock secret hash
 	AdditionalHash common.Hash `json:"additional_hash"`
