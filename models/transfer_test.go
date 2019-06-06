@@ -50,3 +50,27 @@ func TestModelDB_NewReceivedTransfer(t *testing.T) {
 	}
 	assert.EqualValues(t, len(trs), 0)
 }
+
+func TestID(t *testing.T) {
+	m := SetupTestDb(t)
+	defer m.CloseDB()
+	type AA struct {
+		ID int    `json:"id" gorm:"id"`
+		D  string `json:"d"`
+	}
+	m.db.AutoMigrate(&AA{})
+	m.db.Save(&AA{
+		D: "1",
+	})
+	m.db.Save(&AA{
+		D: "2",
+	})
+	err := m.db.Create(&AA{
+		ID: 2,
+		D:  "3",
+	}).Error
+	fmt.Println("err = ", err)
+	var r []*AA
+	m.db.Find(&r)
+	fmt.Println(utils.StringInterface(r, 3))
+}

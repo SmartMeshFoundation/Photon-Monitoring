@@ -11,8 +11,9 @@ import (
 DelegatePunish 保存一次punish委托的相关数据
 */
 type DelegatePunish struct {
-	LockHashStr       string `json:"lock_hash" gorm:"primary_key"` //the whole lock's hash,not lock secret hash
-	DelegateKey       []byte `json:"delegate_key" gorm:"index"`    // 对应的photonDelegateKey
+	ID                int    `json:"-" gorm:"id"`               // 自增ID,确保不冲突
+	LockHashStr       string `json:"lock_hash" `                //the whole lock's hash,not lock secret hash
+	DelegateKey       []byte `json:"delegate_key" gorm:"index"` // 对应的photonDelegateKey
 	AdditionalHashStr string `json:"additional_hash"`
 	Signature         []byte `json:"signature"`
 }
