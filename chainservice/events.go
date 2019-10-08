@@ -133,11 +133,14 @@ func (ce *ChainEvents) handleClosedStateChange(st2 *mediatedtransfer.ContractClo
 	for _, d := range ds {
 		// 1.  更新委托的信息
 		d.SettleBlockNumber = int64(settleBlockNumber)
-		if d.DelegatorAddress() == st2.ClosingAddress {
-			// 自己关闭的话,不需要第三方代理来 UpdateBalanceProof 和 Withdraw 的,他自己会做.
-			d.Status = models.DelegateStatusSuccessFinishedByOther
-			d.Error = "delegator closed channel"
-		}
+		// 不管是不是自己关闭,都尝试去做,如果用户自己做了,无非就是失败而已,没有负面影响
+		// 考虑到用户丢失photon数据之后,需要自己强制关闭通道来提取通道中的钱,而数据丢失的话,提交的一定的nonce=0的BalanceProof
+		// 这时候就需要PMS来帮忙提交最新的
+		//if d.DelegatorAddress() == st2.ClosingAddress {
+		//	// 自己关闭的话,不需要第三方代理来 UpdateBalanceProof 和 Withdraw 的,他自己会做.
+		//	d.Status = models.DelegateStatusSuccessFinishedByOther
+		//	d.Error = "delegator closed channel"
+		//}
 		ce.db.UpdateObject(d)
 		// 2. 添加monitor
 		ce.db.AddDelegateMonitor(d)
@@ -278,11 +281,11 @@ func (ce *ChainEvents) handleStateChange(st transfer.StateChange) {
 }
 
 func (ce *ChainEvents) handleBlockNumber(n int64) {
-	lastBlockNumber:=ce.GetBlockNumber()
-	if lastBlockNumber!=0 && lastBlockNumber <n-1 {
+	lastBlockNumber := ce.GetBlockNumber()
+	if lastBlockNumber != 0 && lastBlockNumber < n-1 {
 		//有可能通知的BlockNumber并不是严格连续的,比如1,3,4,7,跳过了5,6,除了启动以外,在正常情况下也有可能出现这种情形.
-		log.Info(fmt.Sprintf("not continue blocknumber last=%d,current=%d",lastBlockNumber,n))
-		for i:=lastBlockNumber+1;i<=n-1;i++{
+		log.Info(fmt.Sprintf("not continue blocknumber last=%d,current=%d", lastBlockNumber, n))
+		for i := lastBlockNumber + 1; i <= n-1; i++ {
 			ce.handleBlockNumber(i)
 		}
 	}
@@ -636,8 +639,8 @@ func (ce *ChainEvents) doPunish(d *models.Delegate, dp *models.DelegatePunish) (
 
 //GetBlockNumber return latest blocknumber of ethereum
 func (ce *ChainEvents) GetBlockNumber() int64 {
-	i:= ce.blockNumber.Load()
-	if i== nil{
+	i := ce.blockNumber.Load()
+	if i == nil {
 		return 0
 	}
 	return i.(int64)
