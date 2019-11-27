@@ -68,6 +68,14 @@ func (ce *ChainEvents) VerifyDelegate(c *models.ChannelFor3rd, delegater common.
 		}
 		haveValidData = true
 	}
+	if len(c.Secrets) > 0 {
+		for _, s := range c.Secrets {
+			if s == nil || s.Secret == utils.EmptyHash {
+				return fmt.Errorf("secret error, Secret must be valid")
+			}
+		}
+		haveValidData = true
+	}
 	if !haveValidData {
 		return fmt.Errorf("invalid delegate,it's empty")
 	}

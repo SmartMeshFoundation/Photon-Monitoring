@@ -24,7 +24,7 @@ const (
 	ExecuteStatusErrorFinished
 )
 
-// DelegateType 委托类型,目前有3种
+// DelegateType 委托类型,目前有4种
 type DelegateType int
 
 // #nosec
@@ -32,6 +32,7 @@ const (
 	DelegateTypeUpdateBalanceProof = iota
 	DelegateTypeUnlock
 	DelegateTypePunish
+	DelegateTypeRegisterSecret
 )
 
 /*
@@ -44,8 +45,8 @@ type DelegateExecuteRecord struct {
 	ChannelIdentifierStr string        `json:"channel_identifier"`
 	OpenBlockNumber      int64         `json:"open_block_number"`
 	DelegatorStr         string        `json:"delegator"`
-	Type                 DelegateType  `json:"type"`
-	Status               ExecuteStatus `json:"status"`
+	Type                 DelegateType  `json:"type" gorm:"index"`
+	Status               ExecuteStatus `json:"status" gorm:"index"`
 	Error                string        `json:"error"`
 	ExecuteTimestamp     int64         `json:"execute_timestamp"` // 执行时间
 	TxHashStr            string        `json:"tx_hash_str"`
@@ -54,6 +55,7 @@ type DelegateExecuteRecord struct {
 	TxPackBlockNumber    int64         `json:"tx_pack_block_number"`   // 打包高度
 	TxPackTimestamp      int64         `json:"tx_pack_timestamp"`      // 打包时间
 	GobParams            []byte        `json:"params"`                 // 相关参数,gob编码,根据类型不同对应DelegateUpdateBalanceProof,DelegateUnlock,DelegatePunish三个结构体
+	Secret               string        `json:"secret" gorm:"index"`    // 仅注册密码时使用,方便查询
 }
 
 // ChannelIdentifier getter
@@ -108,4 +110,19 @@ func (model *ModelDB) SaveDelegateExecuteRecord(r *DelegateExecuteRecord) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+// HasSecretAlreadyRegister 查询密码是否被注册过
+func (model *ModelDB) HasSecretAlreadyRegister(secret common.Hash) bool {
+	q := &DelegateExecuteRecord{
+		Type:   DelegateTypeRegisterSecret,
+		Status: ExecuteStatusSuccessFinished,
+		Secret: secret.String(),
+	}
+	r := &DelegateExecuteRecord{}
+	err := model.db.Where(q).Find(r).Error
+	if err != nil {
+		return false
+	}
+	return true
 }

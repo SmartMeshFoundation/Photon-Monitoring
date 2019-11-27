@@ -22,6 +22,9 @@ var SmtUpdateTransfer *big.Int
 //SmtPunish needs to do punish Tx
 var SmtPunish *big.Int
 
+//SmtSecret needs to do call secret register
+var SmtSecret *big.Int
+
 //SmtAddress the token payed for service
 var SmtAddress common.Address
 
@@ -58,6 +61,7 @@ func init() {
 	SmtUnlock = big.NewInt(1)
 	SmtPunish = big.NewInt(2)
 	SmtUpdateTransfer = big.NewInt(3)
+	SmtSecret = big.NewInt(1)
 	SmtAddress = common.HexToAddress("0x292650fee408320D888e06ed89D938294Ea42f99")
 }
 

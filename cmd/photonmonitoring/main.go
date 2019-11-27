@@ -105,6 +105,11 @@ func StartMain() {
 			Value: "0",
 		},
 		cli.StringFlag{
+			Name:  "secret-register-fee",
+			Usage: "fee for register secret Transaction ",
+			Value: "0",
+		},
+		cli.StringFlag{
 			Name:  "photon-url",
 			Usage: "query charging fee photon node",
 			Value: params.PhotonURL,
@@ -234,18 +239,24 @@ func config(ctx *cli.Context) {
 	params.SmtUnlock = bi
 	bi, b = new(big.Int).SetString(ctx.String("punish-fee"), 10)
 	if !b {
-		log.Error(fmt.Sprintf("punish-fee arg err %s", ctx.String("unlock-fee")))
+		log.Error(fmt.Sprintf("punish-fee arg err %s", ctx.String("punish-fee")))
 		utils.SystemExit(1)
 	}
 	params.SmtPunish = bi
 	bi, b = new(big.Int).SetString(ctx.String("update-transfer-fee"), 10)
 	if !b {
-		log.Error(fmt.Sprintf("update-transfer-fee arg err %s", ctx.String("unlock-fee")))
+		log.Error(fmt.Sprintf("update-transfer-fee arg err %s", ctx.String("update-transfer-fee")))
 		utils.SystemExit(1)
 	}
 	params.SmtUpdateTransfer = bi
-	log.Info(fmt.Sprintf("unlockfee=%s,punishfee=%s,updatetransferfee=%s,smtaddress=%s",
-		params.SmtUnlock, params.SmtPunish, params.SmtUpdateTransfer, params.SmtAddress.String(),
+	bi, b = new(big.Int).SetString(ctx.String("secret-register-fee"), 10)
+	if !b {
+		log.Error(fmt.Sprintf("secret-register-fee arg err %s", ctx.String("secret-register-fee")))
+		utils.SystemExit(1)
+	}
+	params.SmtSecret = bi
+	log.Info(fmt.Sprintf("unlock_fee=%s,punish_fee=%s,updatetransfer_fee=%s,secertregister_fee=%s smtaddress=%s",
+		params.SmtUnlock, params.SmtPunish, params.SmtUpdateTransfer, params.SmtSecret, params.SmtAddress.String(),
 	))
 	url := ctx.String("photon-url")
 	if len(url) <= 0 || strings.Index(url, "http://") != 0 {

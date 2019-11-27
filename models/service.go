@@ -112,6 +112,9 @@ func updateDelegate(tx *gorm.DB, c *ChannelFor3rd, delegator common.Address, las
 		d.DelegateTimestamp = time.Now().Unix()
 		d.DelegateBlockNumber = lastBlockNumber
 	}
+	// 2.5 全量更新Secret
+	d.SetSecrets(c.GetDeleteSecrets())
+
 	// 3. 更新计费信息
 	d.CalcNeedSMT(newSMT4Punish)
 	// 4. 更新

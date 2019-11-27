@@ -54,6 +54,7 @@ type Delegate struct {
 	NeedSMTStr                 string         `json:"need_smt_str"`
 	UpdateBalanceProofGobBytes []byte         `json:"-"`
 	UnlocksGobBytes            []byte         `json:"-"`
+	SecretsGobBytes            []byte         `json:"-"`
 }
 
 // ChannelIdentifier getter
@@ -120,6 +121,28 @@ func (d *Delegate) Unlocks() []*DelegateUnlock {
 	return das
 }
 
+// SetSecrets setter
+func (d *Delegate) SetSecrets(secrets []*DelegateSecret) {
+	var buf bytes.Buffer
+	encoder := gob.NewEncoder(&buf)
+	err := encoder.Encode(&secrets)
+	if err != nil {
+		panic(err)
+	}
+	d.SecretsGobBytes = buf.Bytes()
+}
+
+// Secrets getter
+func (d *Delegate) Secrets() []*DelegateSecret {
+	decoder := gob.NewDecoder(bytes.NewBuffer(d.SecretsGobBytes))
+	var dss []*DelegateSecret
+	err := decoder.Decode(&dss)
+	if err != nil {
+		panic(err)
+	}
+	return dss
+}
+
 // NeedSMT getter
 func (d *Delegate) NeedSMT() *big.Int {
 	return utils.StringToBigInt(d.NeedSMTStr)
@@ -136,6 +159,10 @@ func (d *Delegate) CalcNeedSMT(smt4Punish *big.Int) {
 	smt4Unlock := new(big.Int).Mul(big.NewInt(int64(len(d.Unlocks()))), params.SmtUnlock)
 	needSMT = needSMT.Add(needSMT, smt4Unlock)
 
+	// 按数量
+	smt4Secret := new(big.Int).Mul(big.NewInt(int64(len(d.Secrets()))), params.SmtSecret)
+	needSMT = needSMT.Add(needSMT, smt4Secret)
+
 	// 直接add参数
 	needSMT = needSMT.Add(needSMT, smt4Punish)
 	d.NeedSMTStr = utils.BigIntToString(needSMT)
@@ -151,6 +178,18 @@ func (model *ModelDB) GetDelegateByKey(key []byte) (d *Delegate, err error) {
 	err = model.db.Where(&Delegate{
 		Key: key,
 	}).First(d).Error
+	return
+}
+
+// GetAllDelegate query all
+func (model *ModelDB) GetAllDelegate() (ds []*Delegate) {
+	err := model.db.Find(&ds).Error
+	if err == gorm.ErrRecordNotFound {
+		err = nil
+	}
+	if err != nil {
+		panic(err)
+	}
 	return
 }
 

@@ -86,7 +86,7 @@ func Delegate(w rest.ResponseWriter, r *rest.Request) {
 		})
 		return
 	}
-	log.Trace(fmt.Sprintf("req=%s", utils.StringInterface(req, 3)))
+	//log.Trace(fmt.Sprintf("req=%s", utils.StringInterface(req, 3)))
 	if verify != nil {
 		err = verify.VerifyDelegate(req, delegater)
 		if err != nil {

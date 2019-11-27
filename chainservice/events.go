@@ -2,6 +2,7 @@ package chainservice
 
 import (
 	"crypto/ecdsa"
+	"github.com/SmartMeshFoundation/Photon/network/rpc/contracts"
 	"math/big"
 	"time"
 
@@ -32,14 +33,15 @@ import (
 ChainEvents block chain operations
 */
 type ChainEvents struct {
-	client      *helper.SafeEthClient
-	be          *blockchain.Events
-	bcs         *rpc.BlockChainService
-	key         *ecdsa.PrivateKey
-	db          *models.ModelDB
-	quitChan    chan struct{}
-	stopped     bool
-	blockNumber *atomic.Value
+	client                 *helper.SafeEthClient
+	be                     *blockchain.Events
+	bcs                    *rpc.BlockChainService
+	key                    *ecdsa.PrivateKey
+	db                     *models.ModelDB
+	quitChan               chan struct{}
+	stopped                bool
+	blockNumber            *atomic.Value
+	secretRegisterContract *contracts.SecretRegistry
 }
 
 //NewChainEvents create chain events
@@ -53,14 +55,19 @@ func NewChainEvents(key *ecdsa.PrivateKey, client *helper.SafeEthClient, tokenNe
 	if err != nil {
 		panic("startup error : cannot get registry")
 	}
+	secretRegistryContract, err := contracts.NewSecretRegistry(bcs.GetSecretRegistryAddress(), client)
+	if err != nil {
+		panic("startup error : cannot get secret registry")
+	}
 	return &ChainEvents{
-		client:      client,
-		be:          blockchain.NewBlockChainEvents(client, bcs, &mockChainEventRecordDao{}),
-		bcs:         bcs,
-		key:         key,
-		db:          db,
-		quitChan:    make(chan struct{}),
-		blockNumber: new(atomic.Value),
+		client:                 client,
+		be:                     blockchain.NewBlockChainEvents(client, bcs, &mockChainEventRecordDao{}),
+		bcs:                    bcs,
+		key:                    key,
+		db:                     db,
+		quitChan:               make(chan struct{}),
+		blockNumber:            new(atomic.Value),
+		secretRegisterContract: secretRegistryContract,
 	}
 }
 
@@ -290,6 +297,9 @@ func (ce *ChainEvents) handleBlockNumber(n int64) {
 		}
 	}
 	ce.blockNumber.Store(n)
+	// 1. 处理密码注册委托
+	ce.doDelegateSecrets(lastBlockNumber)
+	// 2. 处理其余委托
 	monitors, err := ce.db.GetDelegateMonitorList(n)
 	if err != nil {
 		log.Error(fmt.Sprintf("GetDelegateMonitorList err %s", err))
@@ -337,6 +347,83 @@ func (ce *ChainEvents) handleBlockNumber(n int64) {
 		}
 	}
 	ce.db.SaveLatestBlockNumber(n)
+}
+
+/*
+	轮询所有委托的待注册密码,如果需要注册,则
+		1. 锁定费用
+		2. 尝试注册
+		3. 计费,密码注册单独计费
+		4. 单独保存密码注册流水,方便查询
+*/
+func (ce *ChainEvents) doDelegateSecrets(lastBlockNumber int64) {
+	ds := ce.db.GetAllDelegate()
+	for _, d := range ds {
+		for _, delegateSecret := range d.Secrets() {
+			if delegateSecret.RegisterBlock > lastBlockNumber {
+				// 没到需要注册的时间,跳过
+				continue
+			}
+			// TODO 暂时直接从数据库中的密码注册流水判断,因为这个量不是很大,后面可以优化
+			if ce.db.HasSecretAlreadyRegister(delegateSecret.GetSecret()) {
+				// 如果已经注册,跳过.TODO 需要在Delegate中删除么?不删除可能浪费点性能,但是影响非常小,反正用户的下次委托就会覆盖掉
+				continue
+			}
+			// 1. 锁定费用,这里费用不足锁定失败直接跳过,因为执行密码注册委托-执行后续委托中间可能存在挺长时间,用户如果在此期间充值了,后续委托仍可以正常执行
+			// 所以密码注册失败直接跳过,确保不影响更为重要的后续委托
+			err := ce.db.AccountLockSmt(d.DelegatorAddress(), params.SmtSecret)
+			if err != nil {
+				log.Error(fmt.Sprintf("delegate [channel=%s delegator=%s secret=%s] Secret Register failed because delegator has no enough balance,ignore", d.ChannelIdentifierStr, d.DelegatorAddressStr, delegateSecret.Secret))
+				continue
+			}
+			// 2. 执行tx
+			r := ce.doRegisterSecret(d, delegateSecret)
+			// 如果失败不扣费,这里失败只可能是被其他用户注册了,跳过即可
+			if r.Status != models.ExecuteStatusSuccessFinished {
+				log.Error(fmt.Sprintf("delegate [channel=%s delegator=%s secret=%s] Secret Register failed,maybe someone register first,ignore", d.ChannelIdentifierStr, d.DelegatorAddressStr, delegateSecret.Secret))
+				err = ce.db.AccountUnlockSmt(d.DelegatorAddress(), params.SmtSecret)
+				if err != nil {
+					log.Error(fmt.Sprintf("AccountUnlockSmt err %s", err))
+				}
+				continue
+			}
+			log.Info(fmt.Sprintf("delegate [channel=%s delegator=%s secret=%s] Secret Register SUCCESS", d.ChannelIdentifierStr, d.DelegatorAddressStr, delegateSecret.Secret))
+			// 3. 扣除
+			err = ce.db.AccountUseSmt(d.DelegatorAddress(), params.SmtSecret)
+			if err != nil {
+				log.Error(fmt.Sprintf("AccountUseSmt err %s", err))
+			}
+		}
+	}
+}
+
+func (ce *ChainEvents) doRegisterSecret(d *models.Delegate, delegateSecret *models.DelegateSecret) (r *models.DelegateExecuteRecord) {
+	r = models.NewDelegateExecuteRecord(d, models.DelegateTypeRegisterSecret, delegateSecret)
+	r.Secret = delegateSecret.Secret
+	defer ce.db.SaveDelegateExecuteRecord(r)
+	tx, err := ce.secretRegisterContract.RegisterSecret(ce.bcs.Auth, delegateSecret.GetSecret())
+	if err != nil {
+		r.Error = fmt.Sprintf("create tx err : %s", err.Error())
+		return
+	}
+	r.Status = models.ExecuteStatusErrorFinished // 默认失败
+	r.TxHashStr = tx.Hash().String()
+	r.TxCreateBlockNumber = ce.blockNumber.Load().(int64)
+	r.TxCreateTimestamp = time.Now().Unix()
+	txReceipt, err := bind.WaitMined(rpc.GetCallContext(), ce.bcs.Client, tx)
+	if err != nil {
+		r.Error = fmt.Sprintf("tx WaitMined err : %s", err.Error())
+		return
+	}
+	r.TxPackBlockNumber = ce.blockNumber.Load().(int64)
+	r.TxPackTimestamp = time.Now().Unix()
+	if txReceipt.Status != types.ReceiptStatusSuccessful {
+		log.Info(fmt.Sprintf("register secret %s failed,receipt=%s", delegateSecret.Secret, utils.StringInterface(txReceipt, 3)))
+		r.Error = "tx execution err "
+		return
+	}
+	r.Status = models.ExecuteStatusSuccessFinished
+	return
 }
 
 /*

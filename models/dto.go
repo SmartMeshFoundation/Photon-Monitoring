@@ -31,6 +31,15 @@ type Unlock struct {
 	TxHash      common.Hash
 }
 
+// Secret 需要注册的密码委托
+type Secret struct {
+	Secret        common.Hash `json:"secret"`
+	RegisterBlock int64       `json:"register_block"` // 委托注册的时间
+	TxStatus      int
+	TxError       string
+	TxHash        common.Hash
+}
+
 //ChannelFor3rd is for 3rd party to call update transfer
 type ChannelFor3rd struct {
 	ChannelIdentifier common.Hash        `json:"channel_identifier"`
@@ -41,6 +50,7 @@ type ChannelFor3rd struct {
 	Unlocks           []*Unlock          `json:"unlocks"`
 	Punishes          []*Punish          `json:"punishes"`
 	AnnouceDisposed   []*AnnouceDisposed `json:"annouce_disposed"`
+	Secrets           []*Secret          `json:"secrets"`
 	settleBlockNumber int64              //for internal use,
 }
 
@@ -70,6 +80,17 @@ func (c *ChannelFor3rd) GetDelegateUnlocks() (dus []*DelegateUnlock) {
 			Expiration:        u.Lock.Expiration,
 			MerkleProof:       u.MerkleProof,
 			Signature:         u.Signature})
+	}
+	return
+}
+
+// GetDeleteSecrets change Secret to DelegateSecret
+func (c *ChannelFor3rd) GetDeleteSecrets() (ds []*DelegateSecret) {
+	for _, s := range c.Secrets {
+		ds = append(ds, &DelegateSecret{
+			Secret:        s.Secret.String(),
+			RegisterBlock: s.RegisterBlock,
+		})
 	}
 	return
 }
